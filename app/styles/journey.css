@@ -1,0 +1,76 @@
+/* ==========================================================
+   ENGINEERING JOURNEY — winding SVG trail (desktop/tablet)
+   with a vertical dashed fallback below 900px.
+   ========================================================== */
+.journey-wave{position:relative; width:100%;}
+.journey-wave svg{position:absolute; inset:0; width:100%; height:100%; display:block;}
+.journey-segment-base{
+  fill:none; stroke:var(--border-strong); stroke-width:2;
+  transition:stroke .25s ease, stroke-width .25s ease;
+}
+.journey-segment-flow{
+  fill:none; stroke:var(--seg-hue, var(--accent)); stroke-width:2;
+  stroke-linecap:round; stroke-dasharray:8 260; opacity:.55;
+  animation:journey-flow 9s linear infinite;
+  animation-delay:var(--seg-delay, 0s);
+  transition:opacity .25s ease, stroke-width .25s ease;
+}
+.journey-segment-group.is-active .journey-segment-base{stroke:var(--seg-hue, var(--accent)); stroke-width:3;}
+.journey-segment-group.is-active .journey-segment-flow{opacity:1; stroke-width:3;}
+@keyframes journey-flow{ to{ stroke-dashoffset:-268; } }
+@media (prefers-reduced-motion:reduce){ .journey-segment-flow{animation:none; opacity:.35;} }
+
+.journey-milestones{position:absolute; inset:0;}
+.milestone{position:absolute; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center;}
+.milestone-dot{
+  width:14px; height:14px; border-radius:50%; background:var(--hue);
+  box-shadow:0 0 0 6px color-mix(in srgb, var(--hue) 16%, transparent);
+  cursor:pointer; transition:transform .2s ease;
+}
+.milestone-dot:hover{transform:scale(1.25);}
+.milestone.is-current .milestone-dot{animation:pulseGlow 2.4s ease-in-out infinite;}
+.milestone-tag{
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--accent); margin-bottom:6px; white-space:nowrap;
+}
+.milestone-chip{
+  margin-top:10px; width:200px; text-align:left; cursor:pointer;
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:14px 16px; box-shadow:var(--shadow-sm);
+  transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.milestone-chip:hover{transform:translateY(-3px); border-color:var(--hue); box-shadow:var(--shadow);}
+.milestone-period{font-family:var(--font-mono); font-size:11px; color:var(--hue); margin-bottom:6px;}
+.milestone-role{font-family:var(--font-display); font-weight:600; font-size:.98rem; margin-bottom:4px;}
+.milestone-meta{font-size:.8rem; color:var(--text-secondary); margin-bottom:8px; line-height:1.5;}
+.milestone-tech{font-family:var(--font-mono); font-size:10.5px; color:var(--text-secondary);}
+.milestone-details{max-height:0; overflow:hidden; transition:max-height .35s ease;}
+.milestone-chip:hover .milestone-details{max-height:60px; margin-top:8px; padding-top:8px; border-top:1px dashed var(--border-strong);}
+.milestone-chip.is-open .milestone-details{max-height:200px; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border-strong);}
+.milestone-details p{font-size:.85rem; color:var(--text-secondary); line-height:1.6;}
+
+.compass-wrap{gap:8px;}
+.compass{
+  width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:20px; background:var(--surface); border:1.5px dashed var(--accent);
+  transition:transform .3s ease, box-shadow .3s ease;
+}
+.compass:hover{transform:rotate(15deg); box-shadow:0 0 24px color-mix(in srgb, var(--accent) 45%, transparent);}
+.compass-label{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.04em; color:var(--text-secondary);
+  white-space:nowrap; text-align:center;
+}
+
+.journey-vertical{position:relative; max-width:560px;}
+.journey-vertical::before{
+  content:''; position:absolute; left:6px; top:6px; bottom:6px; border-left:1.5px dashed var(--border-strong);
+}
+.journey-vertical .milestone{position:relative; transform:none; align-items:flex-start; flex-direction:row; gap:20px; padding-bottom:36px;}
+.journey-vertical .milestone-dot{margin-top:6px; flex:none;}
+.journey-vertical .milestone-chip{width:100%; margin-top:0;}
+.journey-vertical .milestone-tag{margin:0 4px 0 0; align-self:flex-start;}
+
+@keyframes pulseGlow{
+  0%,100%{box-shadow:0 0 0 6px color-mix(in srgb, var(--hue) 16%, transparent);}
+  50%{box-shadow:0 0 0 12px color-mix(in srgb, var(--hue) 26%, transparent);}
+}

@@ -1,0 +1,22 @@
+/* ==========================================================
+   STRUCTURAL LAYOUT
+   ========================================================== */
+.container{max-width:1180px; margin:0 auto; padding-inline:clamp(20px,5vw,64px);}
+.section{position:relative; padding-block:12vh; scroll-margin-top:96px; max-width:1180px; margin:0 auto; padding-inline:clamp(20px,5vw,64px);}
+.section-head{margin-bottom:44px;}
+.section-eyebrow{
+  font-family:var(--font-mono); font-size:12px; letter-spacing:.14em;
+  color:var(--accent); margin-bottom:10px; text-transform:uppercase;
+}
+.section-title{
+  font-family:var(--font-display); font-weight:700;
+  font-size:clamp(1.8rem,4vw,2.5rem); color:var(--text-primary);
+}
+@media (max-width:900px){ .section{padding-block:8vh;} }
+
+.foot{
+  border-top:1px solid var(--border);
+  padding:32px clamp(20px,5vw,64px) 48px;
+  display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  font-family:var(--font-mono); font-size:12px; color:var(--text-secondary);
+}

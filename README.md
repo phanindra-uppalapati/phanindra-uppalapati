@@ -1,5 +1,7 @@
 ## Hi there 👋
 
+This portfolio application is built for Phanindra Uppalapati.
+
 <!--
 **phanindra-uppalapati/phanindra-uppalapati** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 

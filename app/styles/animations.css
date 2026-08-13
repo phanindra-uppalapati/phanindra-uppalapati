@@ -1,0 +1,10 @@
+/* ==========================================================
+   SCROLL-REVEAL + MOTION
+   ========================================================== */
+.reveal{opacity:0; transform:translateY(24px); transition:opacity .6s ease, transform .6s ease;}
+.reveal.is-visible{opacity:1; transform:translateY(0);}
+
+@media (prefers-reduced-motion:reduce){
+  .reveal{opacity:1; transform:none; transition:none;}
+  .milestone-dot, .compass, .card, .btn{transition:none !important; animation:none !important;}
+}

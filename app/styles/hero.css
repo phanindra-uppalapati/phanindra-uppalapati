@@ -1,0 +1,84 @@
+/* ==========================================================
+   HERO — two-column on wide screens (text | constellation),
+   single column on narrow ones with the constellation flowing
+   below the bio text (never overlapping it — see hero-grid).
+   ========================================================== */
+.hero{position:relative; padding-block:14vh 10vh; overflow:hidden;}
+
+/* Subtle time-of-day wash — a faint colored radial gradient, low
+   enough alpha to read fine against either theme. No text, just mood. */
+.hero-tint{
+  position:absolute; inset:0; z-index:0; pointer-events:none;
+  background:radial-gradient(ellipse 60% 50% at 82% 8%, rgba(var(--tint-rgb), 0.14), transparent 65%);
+  transition:background 1.2s ease;
+}
+
+.hero-grid{
+  position:relative; z-index:1; display:grid; grid-template-columns:1.05fr 1fr;
+  gap:clamp(24px,5vw,64px); align-items:center;
+  max-width:1180px; margin:0 auto; padding-inline:clamp(20px,5vw,64px);
+}
+
+.hero-content{min-width:0;}
+.hero-eyebrow{
+  font-family:var(--font-hand); font-weight:600; font-size:clamp(1.35rem,2.6vw,1.7rem);
+  color:var(--accent); margin-bottom:2px;
+}
+.hero-name{
+  font-family:var(--font-display); font-weight:800; letter-spacing:-.01em;
+  font-size:clamp(2.8rem,7vw,4.6rem); line-height:1.02; color:var(--text-primary); margin-bottom:16px;
+}
+.hero-name-dot{color:var(--accent);}
+.hero-tagline{
+  font-family:var(--font-display); font-weight:700; font-size:clamp(1.2rem,2.4vw,1.5rem);
+  color:var(--accent); line-height:1.4; margin-bottom:18px; max-width:520px;
+}
+.hero-bio{font-size:1rem; line-height:1.75; color:var(--text-secondary); margin-bottom:30px; max-width:500px;}
+
+.hero-actions{display:flex; flex-wrap:wrap; gap:14px; margin-bottom:24px;}
+.btn{
+  font-family:var(--font-mono); font-weight:600; font-size:13.5px; letter-spacing:.01em;
+  padding:12px 20px; border-radius:10px; border:1.5px solid var(--border-strong);
+  color:var(--text-primary); transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+  display:inline-flex; align-items:center; gap:8px; text-decoration:none;
+}
+.btn:hover{transform:translateY(-2px);}
+.btn.primary{
+  background:linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #3D8BFD));
+  border-color:transparent; color:var(--accent-contrast); box-shadow:var(--shadow-sm);
+}
+.btn.primary:hover{box-shadow:var(--shadow);}
+.btn.outline{background:transparent; border-color:var(--accent); color:var(--accent);}
+.btn.outline:hover{background:color-mix(in srgb, var(--accent) 10%, transparent);}
+
+.hero-links{display:flex; flex-wrap:wrap; column-gap:22px; row-gap:10px;}
+.hero-links a{
+  display:inline-flex; align-items:center; gap:7px; font-family:var(--font-mono); font-size:12.5px;
+  color:var(--text-secondary); text-decoration:none; transition:color .18s ease;
+}
+.hero-links a:hover{color:var(--accent);}
+
+/* ---- Constellation panel ---- */
+.hero-graph-panel{
+  position:relative; width:100%; aspect-ratio:1/1; max-height:640px;
+  min-height:340px;
+}
+#graphCanvas{position:absolute; inset:0; width:100%; height:100%; z-index:0; display:block;}
+.graph-tooltip{
+  position:absolute; pointer-events:none; z-index:3;
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.02em;
+  background:var(--surface-elevated); color:var(--text-primary);
+  border:1px solid var(--border-strong); padding:5px 9px; border-radius:6px;
+  opacity:0; transform:translate(-50%,-130%); transition:opacity .15s ease;
+  white-space:nowrap; box-shadow:var(--shadow-sm);
+}
+.graph-tooltip.is-visible{opacity:1;}
+
+@media (max-width:900px){
+  .hero-grid{grid-template-columns:1fr;}
+  .hero-graph-panel{max-height:420px; margin-top:8px;}
+  .hero-bio, .hero-tagline{max-width:100%;}
+}
+@media (max-width:480px){
+  .hero-graph-panel{min-height:300px;}
+}

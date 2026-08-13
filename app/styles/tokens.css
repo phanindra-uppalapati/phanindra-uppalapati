@@ -1,0 +1,44 @@
+/* ==========================================================
+   DESIGN TOKENS
+   Single source of truth for color, elevation, and type.
+   No other file should hardcode a color or font name.
+   ========================================================== */
+:root{
+  --font-display:var(--font-display-family),sans-serif;
+  --font-body:var(--font-body-family),sans-serif;
+  --font-mono:var(--font-mono-family),monospace;
+  --font-hand:var(--font-hand-family),cursive;
+
+  /* Dark theme (default) */
+  --bg:#0B0C10;
+  --bg-radial-1:rgba(94,106,210,0.10);
+  --bg-radial-2:rgba(58,166,154,0.08);
+  --surface:#131419;
+  --surface-elevated:#191B22;
+  --text-primary:#F4F5F7;
+  --text-secondary:#9497A6;
+  --border:rgba(244,245,247,0.09);
+  --border-strong:rgba(244,245,247,0.16);
+  --accent:#5E6AD2;
+  --accent-2:#3AA69A;
+  --accent-contrast:#FFFFFF;
+  --shadow:0 20px 50px rgba(0,0,0,0.45);
+  --shadow-sm:0 8px 24px rgba(0,0,0,0.30);
+}
+
+[data-theme="light"]{
+  --bg:#FAFAFB;
+  --bg-radial-1:rgba(94,106,210,0.07);
+  --bg-radial-2:rgba(58,166,154,0.06);
+  --surface:#FFFFFF;
+  --surface-elevated:#F3F3F6;
+  --text-primary:#14151A;
+  --text-secondary:#6B6E79;
+  --border:rgba(20,21,26,0.08);
+  --border-strong:rgba(20,21,26,0.14);
+  --accent:#4F46E5;
+  --accent-2:#0F8F82;
+  --accent-contrast:#FFFFFF;
+  --shadow:0 20px 50px rgba(20,21,26,0.08);
+  --shadow-sm:0 8px 24px rgba(20,21,26,0.06);
+}

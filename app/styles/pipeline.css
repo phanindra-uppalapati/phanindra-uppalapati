@@ -1,0 +1,46 @@
+/* ==========================================================
+   MIGRATION PIPELINE (Project 2) — deliberately built on the exact
+   same visual system as the other project's diagram (.flow-node,
+   .flow-node-outcome, .flow-edge-base/-flow, .flow-caption all
+   live in cards.css and are reused as-is here) so both diagrams
+   feel like one design language rather than two different attempts.
+   The rules below are only the small additions this diagram needs
+   on top of that shared system: two lane colors, a legend, and an
+   optional click-to-expand detail panel.
+   ========================================================== */
+
+.pipeline-mount{width:100%; max-width:640px; margin:0 auto; display:flex; flex-direction:column; align-items:center;}
+.pipeline-svg2{width:100%; height:auto; display:block; overflow:visible;}
+
+.pipeline-step-node{cursor:default;}
+.pipeline-step-node.is-clickable{cursor:pointer;}
+.pipeline-step-node.is-clickable circle{stroke-dasharray:2 2;}
+.pipeline-step-node:focus-visible circle{outline:2px solid var(--node-hue, var(--accent)); outline-offset:2px;}
+.pipeline-step-node.is-open circle{fill:color-mix(in srgb, var(--node-hue, var(--accent)) 14%, var(--surface));}
+.pipeline-step-label{font-family:var(--font-mono); fill:var(--text-secondary);}
+
+/* Edges here behave like FlowDiagram's branch edges: dim and still until
+   the walking pointer reaches them, then they brighten and march. */
+.pipeline-step-edge .flow-edge-base{opacity:.3;}
+.pipeline-step-edge .flow-edge-flow{opacity:0; transition:opacity .3s ease;}
+.pipeline-step-edge.is-active .flow-edge-base{opacity:.9; stroke-width:2.4;}
+.pipeline-step-edge.is-active .flow-edge-flow{opacity:1;}
+
+.pipeline-caption{min-height:32px;}
+
+.pipeline-legend{
+  margin-top:10px; display:flex; align-items:center; justify-content:center; gap:6px 16px; flex-wrap:wrap;
+  font-family:var(--font-mono); font-size:11px; color:var(--text-secondary); letter-spacing:.02em;
+}
+.pipeline-legend-dot{width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:2px;}
+
+.pipeline-detail{
+  width:100%; max-width:520px; margin-top:12px; background:var(--surface); border:1px solid var(--border);
+  border-radius:12px; padding:12px 16px; text-align:left;
+}
+.pipeline-detail p{margin:0; font-size:.85rem; line-height:1.55; color:var(--text-secondary);}
+.pipeline-detail strong{color:var(--text-primary); font-family:var(--font-display); font-weight:600;}
+
+@media (max-width:480px){
+  .pipeline-legend{font-size:10px;}
+}
