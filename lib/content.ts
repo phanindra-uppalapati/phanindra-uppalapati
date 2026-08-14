@@ -70,7 +70,7 @@ export type SkillCluster = {
 export const SKILL_GRAPH: SkillCluster[] = [
   { id: 'mainframe', name: 'MAINFRAME', hue: '#C9A227', skills: ['PL/I', 'COBOL', 'JCL', 'REXX'] },
   { id: 'frontend', name: 'FRONTEND', hue: '#C4634F', skills: ['React', 'Next.js', 'JSP'] },
-  { id: 'ai', name: 'AI', hue: '#A855F7', skills: ['GitHub Copilot', 'OpenAI Codex', 'Claude Code', 'LLM Prompts'] },
+  { id: 'ai', name: 'AI', hue: '#A855F7', skills: ['Agentic Workflows', 'Multimodal Integration', 'Claude Code', 'Copilot'] },
   { id: 'cloud', name: 'CLOUD', hue: '#D0679A', skills: ['AWS', 'ROSA', 'PCF'] },
   { id: 'data', name: 'DATA', hue: '#3E7CB1', skills: ['PostgreSQL', 'Db2', 'Redis'] },
   { id: 'platform', name: 'PLATFORM', hue: '#7C6FE0', skills: ['GitLab CI', 'GitOps', 'Kubernetes'] },
@@ -83,10 +83,9 @@ export const SKILL_GRAPH: SkillCluster[] = [
    abbreviateSkill) so a newly added skill never breaks mobile layout —
    add an entry here only if the auto-shortened version looks off. */
 export const SKILL_ABBREVIATIONS: Record<string, string> = {
-  'GitHub Copilot': 'Copilot',
-  'OpenAI Codex': 'Codex',
+  'Agentic Workflows': 'Agentic',
+  'Multimodal Integration': 'Multimodal',
   'Claude Code': 'Claude',
-  'LLM Prompts': 'LLM',
   'PostgreSQL': 'Postgres',
   'GitLab CI': 'GitLab',
   'Kubernetes': 'K8s',
@@ -95,20 +94,36 @@ export const SKILL_ABBREVIATIONS: Record<string, string> = {
   'Next.js': 'Next',
 };
 
-/* Curated cluster-to-cluster edges — each pair reflects a real relationship
-   in how these domains actually connect in your work, not an exhaustive
-   mesh. Lines are drawn between the two clusters' outer edges (no center
-   hub in this design). Edit freely: entries just need to reference two ids
-   from SKILL_GRAPH above. */
-export const SKILL_CONNECTIONS: [string, string][] = [
-  ['mainframe', 'backend'], // legacy systems feeding into modern services — your own career arc
-  ['backend', 'frontend'], // service layer to UI
-  ['backend', 'platform'], // what CI/CD deploys
-  ['platform', 'cloud'], // where it deploys to
-  ['backend', 'data'], // application to persistence
-  ['data', 'cloud'], // managed data services
-  ['backend', 'ai'], // AI-assisted service development
-  ['platform', 'ai'], // AI-assisted tooling and CI/CD
+/* Cluster-to-cluster edges — each pair reflects a real relationship in how
+   these domains actually connect in your work, not an exhaustive mesh.
+   `weight` controls line treatment: 'primary' draws solid/stronger,
+   'secondary' draws dashed/subtle (see SkillGraphCanvas). These sit
+   alongside the avatar→domain spokes, which every domain gets
+   automatically and aren't listed here. Edit freely: entries just need
+   to reference two ids from SKILL_GRAPH above.
+
+   Note: a couple of pairs you dictated conflicted between the two lists
+   (e.g. 'Data–AI' and 'Backend–Frontend' each showed up under both
+   primary and secondary) — resolved to primary, since that was each
+   pair's first/stronger listing. 'Backend–AI' was in your original
+   11-pair list but dropped from the later primary/secondary pass, so
+   it's kept here as secondary rather than silently dropped. */
+export const SKILL_CONNECTIONS: { a: string; b: string; weight: 'primary' | 'secondary' }[] = [
+  // primary — strong, visible relationships
+  { a: 'backend', b: 'data', weight: 'primary' },
+  { a: 'backend', b: 'mainframe', weight: 'primary' },
+  { a: 'backend', b: 'frontend', weight: 'primary' },
+  { a: 'backend', b: 'cloud', weight: 'primary' },
+  { a: 'cloud', b: 'platform', weight: 'primary' },
+  { a: 'data', b: 'ai', weight: 'primary' },
+  { a: 'platform', b: 'ai', weight: 'primary' },
+  // secondary — real but less visually dominant
+  { a: 'mainframe', b: 'cloud', weight: 'secondary' },
+  { a: 'frontend', b: 'ai', weight: 'secondary' },
+  { a: 'data', b: 'cloud', weight: 'secondary' },
+  { a: 'mainframe', b: 'data', weight: 'secondary' },
+  { a: 'platform', b: 'backend', weight: 'secondary' },
+  { a: 'backend', b: 'ai', weight: 'secondary' },
 ];
 
 export type JourneyEntry = {

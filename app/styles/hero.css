@@ -14,9 +14,9 @@
 }
 
 .hero-grid{
-  position:relative; z-index:1; display:grid; grid-template-columns:1.05fr 1fr;
-  gap:clamp(24px,5vw,64px); align-items:center;
-  max-width:1180px; margin:0 auto; padding-inline:clamp(20px,5vw,64px);
+  position:relative; z-index:1; display:grid; grid-template-columns:minmax(340px,440px) 1fr;
+  gap:clamp(20px,3vw,48px); align-items:center;
+  max-width:1680px; margin:0 auto; padding-inline:clamp(16px,4vw,56px);
 }
 
 .hero-content{min-width:0;}
@@ -58,10 +58,13 @@
 }
 .hero-links a:hover{color:var(--accent);}
 
-/* ---- Constellation panel ---- */
+/* ---- Constellation panel ----
+   No aspect-ratio lock and a viewport-scaled height (not a small flat
+   max-height) so the graph can actually grow on large displays instead
+   of hitting an early ceiling — see hero-grid above for the matching
+   column split that gives this panel the majority of the hero width. */
 .hero-graph-panel{
-  position:relative; width:100%; aspect-ratio:1/1; max-height:640px;
-  min-height:340px;
+  position:relative; width:100%; min-height:420px; height:clamp(460px, 76vh, 940px);
 }
 #graphCanvas{position:absolute; inset:0; width:100%; height:100%; z-index:0; display:block;}
 .graph-tooltip{
@@ -74,11 +77,48 @@
 }
 .graph-tooltip.is-visible{opacity:1;}
 
+/* ---- Avatar hub — the ONLY center node ---- */
+.graph-hub{
+  --hub-hue: var(--accent);
+  position:absolute; top:50%; left:50%; z-index:2;
+  width:clamp(120px,12vw,190px); height:clamp(120px,12vw,190px); border-radius:50%;
+  transform:translate(-50%,-50%) scale(1);
+  border:1.5px solid color-mix(in srgb, var(--accent) 40%, var(--border-strong));
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent),
+             0 0 34px color-mix(in srgb, var(--accent) 22%, transparent), var(--shadow-sm);
+  animation:hubPulse 4.2s ease-in-out infinite;
+  cursor:pointer;
+}
+.graph-hub.is-active{
+  transform:translate(-50%,-50%) scale(1.045);
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--hub-hue) 45%, transparent),
+             0 0 46px color-mix(in srgb, var(--hub-hue) 40%, transparent), var(--shadow);
+}
+@keyframes hubPulse{
+  0%,100%{box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent), 0 0 30px color-mix(in srgb, var(--accent) 18%, transparent), var(--shadow-sm);}
+  50%{box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 26%, transparent), 0 0 42px color-mix(in srgb, var(--accent) 30%, transparent), var(--shadow-sm);}
+}
+@media (prefers-reduced-motion:reduce){.graph-hub{animation:none;}}
+.graph-hub-avatar{
+  position:relative; display:block; width:100%; height:100%; border-radius:50%; overflow:hidden;
+  background:var(--surface-elevated);
+}
+.graph-hub-avatar img{width:100%; height:100%; object-fit:cover; object-position:center 18%; display:block;}
+.graph-hub-tag{
+  position:absolute; top:100%; left:50%; transform:translate(-50%,10px);
+  margin-top:6px; padding:6px 12px; border-radius:20px; white-space:nowrap;
+  font-family:var(--font-mono); font-size:11.5px; color:var(--text-primary);
+  background:var(--surface-elevated); border:1px solid var(--border-strong); box-shadow:var(--shadow-sm);
+  opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
+}
+.graph-hub.is-active .graph-hub-tag{opacity:1; transform:translate(-50%,4px);}
+
 @media (max-width:900px){
   .hero-grid{grid-template-columns:1fr;}
-  .hero-graph-panel{max-height:420px; margin-top:8px;}
+  .hero-graph-panel{height:clamp(420px, 62vh, 640px); min-height:380px; margin-top:8px;}
   .hero-bio, .hero-tagline{max-width:100%;}
 }
 @media (max-width:480px){
-  .hero-graph-panel{min-height:300px;}
+  .hero-graph-panel{min-height:340px;}
+  .graph-hub{width:104px; height:104px;}
 }

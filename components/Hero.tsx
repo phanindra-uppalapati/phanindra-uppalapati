@@ -113,7 +113,7 @@ export default function Hero() {
         </div>
 
         <div className="hero-graph-panel reveal" ref={graphPanelRef}>
-          {false && graphStarted && <SkillGraphCanvas panelRef={graphPanelRef} hourWarmth={tint.warmth} />}
+          {graphStarted && <SkillGraphCanvas panelRef={graphPanelRef} hourWarmth={tint.warmth} />}
         </div>
       </div>
     </section>

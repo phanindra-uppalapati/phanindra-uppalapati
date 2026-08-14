@@ -1,35 +1,36 @@
 'use client';
 
 /* ==========================================================
-   SKILL GRAPH — an organic constellation of skill clusters,
-   connected to each other (no center hub / avatar in this design).
+   SKILL CONSTELLATION — avatar hub with 7 domains radiating out.
 
-   - Cluster positions are NOT stored in data: they're scattered
-     deterministically (a seeded spiral, not Math.random — stable
-     across reloads) then relaxed apart with a light repulsion pass
-     so no two halos ever overlap and nothing clips the panel edge,
-     at any width or cluster count. Add/remove/reorder a cluster in
-     lib/content.ts and this just re-settles around it.
-   - Every label (cluster name + each skill node) is placed by a
-     small collision solver: it tries a few candidate positions
-     around its anchor and picks whichever collides least with
-     other labels and with neighboring clusters' halos — this is
-     what keeps things like "OpenAI Codex" and "Claude Code" from
-     ever landing on top of each other.
-   - Cross-cluster connections (SKILL_CONNECTIONS in content.ts)
-     draw between the two clusters' outer edges, with a subtle
-     traveling glow on every line, brighter on hover.
-   - Hover (mouse or touch) pops the cluster/node, glows its lines,
-     and — on mobile, where labels are abbreviated — shows the full
-     name in a small tooltip.
+   - The avatar (lib/heroAvatar.ts) is the ONLY center node — a real
+     DOM element layered over the canvas so the portrait stays crisp
+     at any DPR and gets a native CSS hover state. It's intentionally
+     kept independent of SKILL_GRAPH (lib/content.ts): swapping the
+     portrait or editing the domains never requires touching the other.
+   - Every domain gets a thin spoke to the avatar (always present) PLUS
+     a curated set of domain-to-domain relationships from
+     SKILL_CONNECTIONS, weighted 'primary' (solid) or 'secondary'
+     (dashed).
+   - Domains are spread evenly around the hub (small deterministic
+     jitter for an organic, not mechanical, feel), pushed out as far
+     as the panel allows, then clamped so nothing clips or overlaps at
+     any panel size — see the layout-verification notes on haloR below.
+   - Hover a domain: it and the avatar go to full strength, directly
+     related domains stay moderately visible, everything else fades to
+     ~10-20%, and only the active relationships keep animating. The
+     hovered domain's own skill nodes also spread further apart (and
+     its halo grows to match) so they're easier to read.
    ========================================================== */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SKILL_ABBREVIATIONS, SKILL_CONNECTIONS, SKILL_GRAPH } from '@/lib/content';
+import { HERO_AVATAR } from '@/lib/heroAvatar';
 import { abbreviateSkill, clamp, hexToRgba, legibleHue, prefersReducedMotion } from '@/lib/utils';
 
 const ENTRY_STAGGER_MS = 80;
 const ENTRY_DUR_MS = 560;
+const EXPAND_SPRING = 0.1; // how fast a hovered cluster's spread/halo eases to its expanded size
 
 type Align = 'left' | 'right' | 'center';
 
@@ -53,7 +54,7 @@ type Node = {
 };
 
 type ClusterLabelPlan = { dx: number; dy: number; align: Align; baseline: CanvasTextBaseline };
-type Edge = { a: number; b: number; hue: string };
+type Edge = { a: number; b: number; hue: string; kind: 'spoke' | 'primary' | 'secondary' };
 type Rect = { x: number; y: number; w: number; h: number };
 
 function easeOutCubic(x: number): number {
@@ -78,6 +79,8 @@ export default function SkillGraphCanvas({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const hubRef = useRef<HTMLDivElement>(null);
+  const [hubHovered, setHubHovered] = useState(false);
 
   useEffect(() => {
     const panelEl = panelRef.current;
@@ -96,87 +99,83 @@ export default function SkillGraphCanvas({
     let nodes: Node[] = [];
     let clusterCenters: { x: number; y: number }[] = [];
     let clusterLabels: ClusterLabelPlan[] = [];
+    let expansion: number[] = []; // per-cluster spring value, 1 = normal, >1 = hovered/expanded
     const mouse = { x: -9999, y: -9999 };
     const reduceMotion = prefersReducedMotion();
     let panelVisible = true;
     let hoveredNode: Node | null = null;
     let hoveredCluster = -1;
+    let hubIsHovered = false;
     let rafId: number | null = null;
     const mountedAt = performance.now();
 
     const idIndex = new Map(SKILL_GRAPH.map((c, i) => [c.id, i]));
     const edges: Edge[] = [];
-    SKILL_CONNECTIONS.forEach(([fromId, toId]) => {
+    SKILL_GRAPH.forEach((c, i) => edges.push({ a: -1, b: i, hue: c.hue, kind: 'spoke' })); // -1 = hub
+    SKILL_CONNECTIONS.forEach(({ a: fromId, b: toId, weight }) => {
       const a = idIndex.get(fromId);
       const b = idIndex.get(toId);
       if (a === undefined || b === undefined) return;
-      edges.push({ a, b, hue: SKILL_GRAPH[a].hue });
+      edges.push({ a, b, hue: SKILL_GRAPH[a].hue, kind: weight });
+    });
+
+    // Directly-related domains for each domain, from the mesh edges only
+    // (a spoke to the hub doesn't make two domains "related" to each other).
+    const relatedOf: number[][] = SKILL_GRAPH.map((_, ci) => {
+      const set = new Set<number>();
+      edges.forEach((e) => {
+        if (e.kind === 'spoke') return;
+        if (e.a === ci) set.add(e.b);
+        if (e.b === ci) set.add(e.a);
+      });
+      return Array.from(set);
     });
 
     function clampNum(n: number, min: number, max: number) {
       return Math.min(Math.max(n, min), max);
     }
 
-    /* Deterministic organic scatter: a golden-angle spiral seed (never
-       a perfect ring, never a grid) relaxed apart with simple pairwise
-       repulsion + edge containment until nothing overlaps or clips. */
-    function computeOrganicPositions(): { x: number; y: number }[] {
-      const count = SKILL_GRAPH.length;
+    /* Evenly spread around the hub with a small deterministic (not
+       random — stable across reloads) jitter for an organic feel, then
+       clamped so no halo clips the panel edge or overlaps a neighbor —
+       verified analytically across the full 320-1700px width range
+       before tuning these constants (see the layout-check notes in the
+       project's build log), so this holds at any panel size. */
+    function clusterBasePositions(): { x: number; y: number }[] {
       const cx = W / 2;
       const cy = H / 2;
-      const golden = Math.PI * (3 - Math.sqrt(5));
-      const seedR = Math.min(W, H) * 0.3;
-      const positions = SKILL_GRAPH.map((_, i) => {
-        const t = (i + 0.5) / count;
-        const r = Math.sqrt(t) * seedR;
-        const theta = i * golden + Math.sin(i * 1.9) * 0.35;
-        return { x: cx + Math.cos(theta) * r, y: cy + Math.sin(theta) * r * 0.9 };
+      const count = SKILL_GRAPH.length;
+      const radiusX = W * (isMobile ? 0.36 : 0.44);
+      const radiusY = H * (isMobile ? 0.34 : 0.42);
+      const startAngle = -Math.PI / 2 - Math.PI / count;
+
+      const raw = SKILL_GRAPH.map((_, i) => {
+        const angleJitter = Math.sin(i * 2.399) * 0.07;
+        const radiusJitter = 1 + Math.cos(i * 1.732) * 0.06;
+        const angle = startAngle + (i / count) * Math.PI * 2 + angleJitter;
+        return {
+          x: cx + Math.cos(angle) * radiusX * radiusJitter,
+          y: cy + Math.sin(angle) * radiusY * radiusJitter,
+        };
       });
 
-      const gapPx = isMobile ? 10 : 20;
-      const minSep = haloR * 2 + gapPx;
-      const labelRoom = isMobile ? 34 : 88;
-      const marginX = clampNum(haloR + labelRoom, 0, W / 2 - 4);
-      const marginY = clampNum(haloR + (isMobile ? 20 : 40), 0, H / 2 - 4);
-
-      for (let iter = 0; iter < 90; iter++) {
-        for (let i = 0; i < count; i++) {
-          for (let j = i + 1; j < count; j++) {
-            const dx = positions[j].x - positions[i].x;
-            const dy = positions[j].y - positions[i].y;
-            let dist = Math.hypot(dx, dy);
-            if (dist < 0.001) dist = 0.001;
-            if (dist < minSep) {
-              const push = (minSep - dist) / 2;
-              const ux = dx / dist;
-              const uy = dy / dist;
-              positions[i].x -= ux * push;
-              positions[i].y -= uy * push;
-              positions[j].x += ux * push;
-              positions[j].y += uy * push;
-            }
-          }
-        }
-        positions.forEach((p) => {
-          p.x = clampNum(p.x, marginX, Math.max(marginX, W - marginX));
-          p.y = clampNum(p.y, marginY, Math.max(marginY, H - marginY));
-        });
-      }
-      return positions;
+      const labelMargin = isMobile ? 34 : 108;
+      const marginX = clampNum(haloR + labelMargin, 0, W / 2 - 4);
+      const marginY = clampNum(haloR + (isMobile ? 16 : 34), 0, H / 2 - 4);
+      return raw.map((p) => ({
+        x: clampNum(p.x, marginX, Math.max(marginX, W - marginX)),
+        y: clampNum(p.y, marginY, Math.max(marginY, H - marginY)),
+      }));
     }
 
-    /* Collision-avoiding label placement, run once per layout (not every
-       frame — idle motion is subtle enough that a static, well-chosen
-       position holds up fine, and re-solving every frame would make
-       labels jitter between candidates for no visual benefit). */
+    /* Collision-avoiding label placement, run once per layout — idle
+       motion is subtle enough that a static, well-chosen position holds
+       up fine without re-solving every frame. */
     function planLabels() {
       const placedLabels: Rect[] = [];
       const haloBoxes = clusterCenters.map((c) => ({ x: c.x - haloR, y: c.y - haloR, w: haloR * 2, h: haloR * 2 }));
 
-      function bestCandidate(
-        candidates: { rect: Rect; meta: any }[],
-        excludeHaloIndex: number
-      ): any {
+      function bestCandidate(candidates: { rect: Rect; meta: any }[], excludeHaloIndex: number): any {
         let best = candidates[0].meta;
         let bestScore = Infinity;
         for (const { rect, meta } of candidates) {
@@ -210,22 +209,21 @@ export default function SkillGraphCanvas({
         const { x: cx, y: cy } = clusterCenters[ci];
         const w = ctx!.measureText(cluster.name).width;
         const gap = 10;
-        const sides: { dx: number; dy: number; align: Align; baseline: CanvasTextBaseline }[] =
-          cluster.labelSide
-            ? [
-                {
-                  top: { dx: 0, dy: -(haloR + gap), align: 'center' as Align, baseline: 'bottom' as CanvasTextBaseline },
-                  bottom: { dx: 0, dy: haloR + gap + clusterH, align: 'center' as Align, baseline: 'top' as CanvasTextBaseline },
-                  left: { dx: -(haloR + gap), dy: 0, align: 'right' as Align, baseline: 'middle' as CanvasTextBaseline },
-                  right: { dx: haloR + gap, dy: 0, align: 'left' as Align, baseline: 'middle' as CanvasTextBaseline },
-                }[cluster.labelSide],
-              ]
-            : [
-                { dx: 0, dy: -(haloR + gap), align: 'center', baseline: 'bottom' },
-                { dx: 0, dy: haloR + gap + clusterH, align: 'center', baseline: 'top' },
-                { dx: -(haloR + gap), dy: 0, align: 'right', baseline: 'middle' },
-                { dx: haloR + gap, dy: 0, align: 'left', baseline: 'middle' },
-              ];
+        const sides: { dx: number; dy: number; align: Align; baseline: CanvasTextBaseline }[] = cluster.labelSide
+          ? [
+              {
+                top: { dx: 0, dy: -(haloR + gap), align: 'center' as Align, baseline: 'bottom' as CanvasTextBaseline },
+                bottom: { dx: 0, dy: haloR + gap + clusterH, align: 'center' as Align, baseline: 'top' as CanvasTextBaseline },
+                left: { dx: -(haloR + gap), dy: 0, align: 'right' as Align, baseline: 'middle' as CanvasTextBaseline },
+                right: { dx: haloR + gap, dy: 0, align: 'left' as Align, baseline: 'middle' as CanvasTextBaseline },
+              }[cluster.labelSide],
+            ]
+          : [
+              { dx: 0, dy: -(haloR + gap), align: 'center', baseline: 'bottom' },
+              { dx: 0, dy: haloR + gap + clusterH, align: 'center', baseline: 'top' },
+              { dx: -(haloR + gap), dy: 0, align: 'right', baseline: 'middle' },
+              { dx: haloR + gap, dy: 0, align: 'left', baseline: 'middle' },
+            ];
 
         const candidates = sides.map((s) => {
           let rx = cx + s.dx;
@@ -263,11 +261,10 @@ export default function SkillGraphCanvas({
 
     function layout() {
       isMobile = W < 560;
-      // No hub competing for center space in this design, so halos can
-      // claim a bit more of the panel than the old hub-centric version.
-      haloR = isMobile ? clampNum(W * 0.1, 20, 44) : clampNum(W * 0.115, 48, 92);
+      haloR = isMobile ? clampNum(W * 0.09, 20, 46) : clampNum(W * 0.095, 50, 128);
 
-      clusterCenters = computeOrganicPositions();
+      clusterCenters = clusterBasePositions();
+      expansion = SKILL_GRAPH.map(() => 1);
 
       nodes = [];
       const spread = haloR * 0.5;
@@ -300,6 +297,14 @@ export default function SkillGraphCanvas({
       });
 
       planLabels();
+      positionHub();
+    }
+
+    function positionHub() {
+      const hub = hubRef.current;
+      if (!hub) return;
+      hub.style.left = W / 2 + 'px';
+      hub.style.top = H / 2 + 'px';
     }
 
     function resize() {
@@ -319,7 +324,6 @@ export default function SkillGraphCanvas({
     function hideTooltip() {
       tooltipEl?.classList.remove('is-visible');
     }
-
     function updateTooltip(clientX: number, clientY: number) {
       if (!tooltipEl) return;
       if (!isMobile || !hoveredNode) {
@@ -338,7 +342,8 @@ export default function SkillGraphCanvas({
       let minD = Infinity;
       clusterCenters.forEach((c, i) => {
         const d = Math.hypot(c.x - mouse.x, c.y - mouse.y);
-        if (d < haloR && d < minD) {
+        const hitR = haloR * expansion[i];
+        if (d < hitR && d < minD) {
           minD = d;
           hc = i;
         }
@@ -389,12 +394,19 @@ export default function SkillGraphCanvas({
     panelEl.addEventListener('touchmove', onTouchMove, { passive: true });
     panelEl.addEventListener('touchend', onTouchEnd, { passive: true });
 
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        panelVisible = entry.isIntersecting;
-      },
-      { threshold: 0 }
-    );
+    const hubEl = hubRef.current;
+    const onHubEnter = () => {
+      hubIsHovered = true;
+      setHubHovered(true);
+    };
+    const onHubLeave = () => {
+      hubIsHovered = false;
+      setHubHovered(false);
+    };
+    hubEl?.addEventListener('mouseenter', onHubEnter);
+    hubEl?.addEventListener('mouseleave', onHubLeave);
+
+    const io = new IntersectionObserver(([entry]) => (panelVisible = entry.isIntersecting), { threshold: 0 });
     io.observe(panelEl);
 
     let textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim() || '#F4F5F7';
@@ -405,65 +417,103 @@ export default function SkillGraphCanvas({
     });
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
-    // Warmth nudges only the traveling pulse glow's alpha, never the
-    // cluster hues themselves — subtle by design, legible in both themes.
     const warmthGlow = 0.75 + hourWarmth * 0.15;
 
-    function drawEdges(t: number, renderCenters: { x: number; y: number }[]) {
+    // Emphasis tier for a cluster given current hover state: 1 = hovered,
+    // 0.6 = directly related to the hovered one, 0.15 = unrelated (faded
+    // out per spec), 0 (well, "normal") = nothing hovered at all.
+    function clusterEmphasis(ci: number): number {
+      if (hoveredCluster === -1) return -1; // idle baseline, not a hover state
+      if (ci === hoveredCluster) return 1;
+      if (relatedOf[hoveredCluster]?.includes(ci)) return 0.6;
+      return 0.15;
+    }
+
+    function drawEdges(t: number, hubPt: { x: number; y: number }, renderCenters: { x: number; y: number }[]) {
+      const anyHover = hoveredCluster !== -1;
       edges.forEach((edge, idx) => {
-        const a = renderCenters[edge.a];
+        const a = edge.kind === 'spoke' ? hubPt : renderCenters[edge.a];
         const b = renderCenters[edge.b];
         if (!a || !b) return;
+
+        // Is this edge part of the "active" set for the current hover?
+        const touchesHovered = edge.a === hoveredCluster || edge.b === hoveredCluster;
+        const bothRelatedOrHovered =
+          !anyHover ||
+          touchesHovered ||
+          (edge.kind !== 'spoke' &&
+            (relatedOf[hoveredCluster]?.includes(edge.a) || edge.a === hoveredCluster) &&
+            (relatedOf[hoveredCluster]?.includes(edge.b) || edge.b === hoveredCluster));
+        const isActive = !anyHover || touchesHovered;
+
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const dist = Math.hypot(dx, dy) || 1;
         const ux = dx / dist;
         const uy = dy / dist;
-        const start = { x: a.x + ux * haloR, y: a.y + uy * haloR };
-        const end = { x: b.x - ux * haloR, y: b.y - uy * haloR };
+        const startR = edge.kind === 'spoke' ? haloR * 0.42 : haloR * expansion[edge.a] || haloR;
+        const endR = haloR * (expansion[edge.b] || 1);
+        const start = { x: a.x + ux * startR, y: a.y + uy * startR };
+        const end = { x: b.x - ux * endR, y: b.y - uy * endR };
 
-        const isActive = edge.a === hoveredCluster || edge.b === hoveredCluster;
+        let alphaMul = 1;
+        if (anyHover) alphaMul = touchesHovered ? 1.3 : bothRelatedOrHovered ? 0.6 : 0.14;
 
-        ctx!.strokeStyle = isActive
-          ? hexToRgba(legibleHue(edge.hue, isLight), isLight ? 0.85 : 0.75)
-          : isLight
-            ? 'rgba(70,75,95,0.22)'
-            : 'rgba(150,150,170,0.10)';
-        ctx!.lineWidth = isActive ? 2 : 1;
+        ctx!.setLineDash(edge.kind === 'secondary' ? [5, 5] : []);
+        if (edge.kind === 'spoke') {
+          const base = isLight ? 0.16 : 0.13;
+          ctx!.strokeStyle = hexToRgba(legibleHue(edge.hue, isLight), clamp(base * alphaMul + (touchesHovered ? 0.35 : 0), 0, 0.9));
+          ctx!.lineWidth = touchesHovered ? 1.6 : 0.85;
+        } else {
+          const neutral = isLight ? [70, 75, 95] : [150, 150, 170];
+          const [r, g, bch] = neutral;
+          const base = edge.kind === 'primary' ? (isLight ? 0.4 : 0.32) : isLight ? 0.22 : 0.16;
+          const a2 = clamp(base * alphaMul + (touchesHovered ? 0.2 : 0), 0, 0.95);
+          ctx!.strokeStyle = `rgba(${r},${g},${bch},${a2})`;
+          ctx!.lineWidth = (edge.kind === 'primary' ? 1.6 : 1) * (touchesHovered ? 1.25 : 1);
+        }
         ctx!.beginPath();
         ctx!.moveTo(start.x, start.y);
         ctx!.lineTo(end.x, end.y);
         ctx!.stroke();
+        ctx!.setLineDash([]);
 
-        if (reduceMotion) return;
+        if (reduceMotion || !isActive) return;
 
-        // Ambient traveling glow — subtle on every line, brighter + a
-        // touch bigger while the line's cluster is hovered.
+        // Traveling glow — ambient on every edge when idle; once something
+        // is hovered, only the active relationships keep animating.
         const offset = idx / Math.max(1, edges.length);
         const p = (t / 9000 + offset) % 1;
         const px = start.x + (end.x - start.x) * p;
         const py = start.y + (end.y - start.y) * p;
-        const glowHue = edge.hue;
-        const glowR = isActive ? 9 : 6;
-
+        const glowR = touchesHovered ? 9 : 6;
         const grad = ctx!.createRadialGradient(px, py, 0, px, py, glowR);
-        grad.addColorStop(0, hexToRgba(glowHue, warmthGlow * (isActive ? 1.15 : 1)));
-        grad.addColorStop(1, hexToRgba(glowHue, 0));
+        grad.addColorStop(0, hexToRgba(edge.hue, warmthGlow * (touchesHovered ? 1.15 : 1)));
+        grad.addColorStop(1, hexToRgba(edge.hue, 0));
         ctx!.fillStyle = grad;
         ctx!.beginPath();
         ctx!.arc(px, py, glowR, 0, Math.PI * 2);
         ctx!.fill();
-        ctx!.fillStyle = hexToRgba(glowHue, 0.85);
+        ctx!.fillStyle = hexToRgba(edge.hue, 0.85);
         ctx!.beginPath();
-        ctx!.arc(px, py, isActive ? 2.4 : 1.8, 0, Math.PI * 2);
+        ctx!.arc(px, py, touchesHovered ? 2.4 : 1.8, 0, Math.PI * 2);
         ctx!.fill();
       });
     }
 
     function draw(t: number) {
       ctx!.clearRect(0, 0, W, H);
+      const hubPt = { x: W / 2, y: H / 2 };
+      const anyHover = hoveredCluster !== -1;
 
-      // Entry: each cluster fades + scales in, in place, staggered.
+      // Spring each cluster's expansion factor toward its target (bigger
+      // while hovered, so its skill nodes spread out and its halo grows
+      // to match — settles back to 1 once the hover moves away).
+      SKILL_GRAPH.forEach((_, ci) => {
+        const target = ci === hoveredCluster ? 1.32 : 1;
+        expansion[ci] += (target - expansion[ci]) * (reduceMotion ? 1 : EXPAND_SPRING);
+      });
+
       const entryT = (ci: number) => {
         if (reduceMotion) return 1;
         const raw = (t - mountedAt - ci * ENTRY_STAGGER_MS) / ENTRY_DUR_MS;
@@ -476,9 +526,10 @@ export default function SkillGraphCanvas({
       };
 
       nodes.forEach((node) => {
+        const exp = expansion[node.clusterIndex];
         const wob = reduceMotion ? 0 : Math.sin(t * 0.0006 * node.speed + node.phase) * 10;
-        let tx = node.cx + Math.cos(node.angle + t * 0.00004) * (node.baseR + wob);
-        let ty = node.cy + Math.sin(node.angle + t * 0.00004) * (node.baseR + wob);
+        let tx = node.cx + Math.cos(node.angle + t * 0.00004) * (node.baseR * exp + wob);
+        let ty = node.cy + Math.sin(node.angle + t * 0.00004) * (node.baseR * exp + wob);
         const dx = tx - mouse.x;
         const dy = ty - mouse.y;
         const dist = Math.hypot(dx, dy);
@@ -492,42 +543,46 @@ export default function SkillGraphCanvas({
         node.y += (ty - node.y) * springRate;
       });
 
-      drawEdges(t, clusterCenters);
+      drawEdges(t, hubPt, clusterCenters);
 
       SKILL_GRAPH.forEach((cluster, ci) => {
         const clusterNodes = nodes.filter((n) => n.clusterIndex === ci);
         const hue = cluster.hue;
         const { x: avgX, y: avgY } = clusterCenters[ci];
-        const isActive = ci === hoveredCluster;
-        const scale = entryT(ci);
-        const alpha = entryAlpha(ci);
-        if (alpha <= 0.001) return;
+        const emphasis = clusterEmphasis(ci);
+        const isHoveredCluster = ci === hoveredCluster;
+        const entryScale = entryT(ci);
+        let alpha = entryAlpha(ci);
+        if (anyHover) alpha *= emphasis === 1 ? 1 : emphasis === 0.6 ? 0.75 : 0.16;
+        if (alpha <= 0.005) return;
+
+        const drawnHaloR = haloR * expansion[ci];
 
         ctx!.save();
         ctx!.globalAlpha = alpha;
         ctx!.translate(avgX, avgY);
-        ctx!.scale(scale, scale);
+        ctx!.scale(entryScale, entryScale);
         ctx!.translate(-avgX, -avgY);
 
-        const grad = ctx!.createRadialGradient(avgX, avgY, 0, avgX, avgY, haloR);
-        grad.addColorStop(0, hexToRgba(hue, (isLight ? 0.26 : 0.13) * (isActive ? 1.8 : 1)));
+        const grad = ctx!.createRadialGradient(avgX, avgY, 0, avgX, avgY, drawnHaloR);
+        grad.addColorStop(0, hexToRgba(hue, (isLight ? 0.26 : 0.13) * (isHoveredCluster ? 1.8 : 1)));
         grad.addColorStop(1, hexToRgba(hue, 0));
         ctx!.fillStyle = grad;
         ctx!.beginPath();
-        ctx!.arc(avgX, avgY, haloR, 0, Math.PI * 2);
+        ctx!.arc(avgX, avgY, drawnHaloR, 0, Math.PI * 2);
         ctx!.fill();
 
         ctx!.save();
         ctx!.setLineDash([6, 5]);
-        ctx!.strokeStyle = hexToRgba(legibleHue(hue, isLight), (isLight ? 0.6 : 0.5) + (isActive ? 0.3 : 0));
-        ctx!.lineWidth = isActive ? 1.6 : 1;
+        ctx!.strokeStyle = hexToRgba(legibleHue(hue, isLight), (isLight ? 0.6 : 0.5) + (isHoveredCluster ? 0.3 : 0));
+        ctx!.lineWidth = isHoveredCluster ? 1.6 : 1;
         ctx!.beginPath();
-        ctx!.arc(avgX, avgY, haloR, 0, Math.PI * 2);
+        ctx!.arc(avgX, avgY, drawnHaloR, 0, Math.PI * 2);
         ctx!.stroke();
         ctx!.restore();
 
-        ctx!.strokeStyle = hexToRgba(legibleHue(hue, isLight), (isLight ? 0.55 : 0.4) + (isActive ? 0.25 : 0));
-        ctx!.lineWidth = isActive ? 1.6 : 1;
+        ctx!.strokeStyle = hexToRgba(legibleHue(hue, isLight), (isLight ? 0.55 : 0.4) + (isHoveredCluster ? 0.25 : 0));
+        ctx!.lineWidth = isHoveredCluster ? 1.6 : 1;
         if (clusterNodes.length > 2) {
           for (let i = 0; i < clusterNodes.length; i++) {
             const a = clusterNodes[i];
@@ -545,25 +600,25 @@ export default function SkillGraphCanvas({
         }
 
         clusterNodes.forEach((n) => {
-          const isHovered = hoveredNode === n;
-          const isNodeActive = isHovered || isActive;
-          const r = isHovered ? n.radius * 1.45 : isActive ? n.radius * 1.15 : n.radius;
+          const isHoveredNode = hoveredNode === n;
+          const isNodeActive = isHoveredNode || isHoveredCluster;
+          const r = isHoveredNode ? n.radius * 1.45 : isHoveredCluster ? n.radius * 1.15 : n.radius;
           if (isNodeActive) {
             ctx!.save();
             ctx!.shadowColor = hexToRgba(legibleHue(hue, isLight), 0.9);
-            ctx!.shadowBlur = isHovered ? 14 : 8;
+            ctx!.shadowBlur = isHoveredNode ? 14 : 8;
           }
           ctx!.beginPath();
           ctx!.arc(n.x, n.y, r, 0, Math.PI * 2);
           ctx!.fillStyle = hexToRgba(hue, isNodeActive ? 1 : 0.85);
           ctx!.fill();
-          ctx!.lineWidth = isHovered ? 2 : 1.4;
+          ctx!.lineWidth = isHoveredNode ? 2 : 1.4;
           ctx!.strokeStyle = hexToRgba(legibleHue(hue, isLight), 1);
           ctx!.stroke();
           if (isNodeActive) ctx!.restore();
 
           const text = isMobile ? n.shortLabel : n.label;
-          ctx!.font = isHovered
+          ctx!.font = isHoveredNode
             ? `700 ${isMobile ? 10.5 : 12.5}px 'JetBrains Mono', monospace`
             : `${isMobile ? 600 : 500} ${isMobile ? 9.5 : 11}px 'JetBrains Mono', monospace`;
           ctx!.fillStyle = hexToRgba(textColor, isNodeActive ? 0.95 : isMobile ? 0.7 : 0.6);
@@ -574,10 +629,10 @@ export default function SkillGraphCanvas({
 
         const lp = clusterLabels[ci];
         if (lp) {
-          ctx!.font = isActive
+          ctx!.font = isHoveredCluster
             ? `700 ${isMobile ? 11.5 : 12.5}px 'JetBrains Mono', monospace`
             : `700 ${isMobile ? 10.5 : 11}px 'JetBrains Mono', monospace`;
-          ctx!.fillStyle = hexToRgba(legibleHue(hue, isLight), isActive ? 1 : 0.95);
+          ctx!.fillStyle = hexToRgba(legibleHue(hue, isLight), isHoveredCluster ? 1 : 0.95);
           ctx!.textAlign = lp.align;
           ctx!.textBaseline = lp.baseline;
           ctx!.fillText(cluster.name, avgX + lp.dx, avgY + lp.dy);
@@ -604,6 +659,8 @@ export default function SkillGraphCanvas({
       window.removeEventListener('mouseleave', onMouseLeave);
       panelEl.removeEventListener('touchmove', onTouchMove);
       panelEl.removeEventListener('touchend', onTouchEnd);
+      hubEl?.removeEventListener('mouseenter', onHubEnter);
+      hubEl?.removeEventListener('mouseleave', onHubLeave);
       io.disconnect();
       themeObserver.disconnect();
       if (rafId) cancelAnimationFrame(rafId);
@@ -614,6 +671,15 @@ export default function SkillGraphCanvas({
     <>
       <canvas id="graphCanvas" ref={canvasRef} aria-hidden="true" />
       <div className="graph-tooltip" id="graphTooltip" ref={tooltipRef} />
+      <div className={'graph-hub' + (hubHovered ? ' is-active' : '')} ref={hubRef} role="img" aria-label={`${HERO_AVATAR.name} — ${HERO_AVATAR.title}`}>
+        <span className="graph-hub-avatar">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={HERO_AVATAR.image} alt="" />
+        </span>
+        <span className="graph-hub-tag" aria-hidden="true">
+          {HERO_AVATAR.name} · {HERO_AVATAR.title}
+        </span>
+      </div>
     </>
   );
 }

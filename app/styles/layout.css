@@ -14,6 +14,56 @@
 }
 @media (max-width:900px){ .section{padding-block:8vh;} }
 
+/* ==========================================================
+   PER-SECTION BACKGROUND TINT
+   Each of these sections is itself the centered, max-width:1180px
+   content box (unlike Hero, which has a separate full-bleed outer
+   wrapper around its own centered grid) — so a background painted
+   directly on the section would only cover that inner 1180px column,
+   leaving plain page background on either side on wider screens.
+   ::before breaks that box out to full viewport width (the standard
+   "full-bleed from a centered container" trick: 50%+-50vw) while
+   staying vertically clipped to this section's own height via
+   position:relative on the section — which is what actually fixes
+   the original bug: each tint is sized/positioned relative to its
+   own section, never the full document, so it can't bleed into a
+   neighboring section or leave a hard seam as the page grows.
+
+   Alternates a barely-different base tone (plain / faint-shade) for
+   scroll rhythm, and alternates which of the two existing accent
+   glow tokens (--bg-radial-1 indigo, --bg-radial-2 teal — same ones
+   Hero's own tint draws from) sits in which corner, so consecutive
+   sections don't feel identical without introducing new hues that'd
+   compete with each section's own content colors (award gold, skill
+   node hues, etc). Hero keeps its own separate time-of-day tint
+   (see hero.css) rather than joining this alternation — it's a
+   deliberate one-time "entrance" flourish, not a repeating motif. */
+#journey::before, #awards::before, #skills::before, #projects::before, #note::before{
+  content:''; position:absolute; top:0; bottom:0; left:50%; right:50%;
+  width:100vw; margin-left:-50vw; margin-right:-50vw;
+  z-index:-1; pointer-events:none;
+}
+#journey::before{
+  background-color:var(--bg);
+  background-image:radial-gradient(ellipse 62% 55% at 90% 4%, var(--bg-radial-1), transparent 62%);
+}
+#awards::before{
+  background-color:color-mix(in srgb, var(--bg) 100%, var(--text-primary) 3%);
+  background-image:radial-gradient(ellipse 58% 55% at 8% 96%, var(--bg-radial-2), transparent 60%);
+}
+#skills::before{
+  background-color:var(--bg);
+  background-image:radial-gradient(ellipse 58% 50% at 10% 6%, var(--bg-radial-1), transparent 60%);
+}
+#projects::before{
+  background-color:color-mix(in srgb, var(--bg) 100%, var(--text-primary) 3%);
+  background-image:radial-gradient(ellipse 62% 55% at 92% 94%, var(--bg-radial-2), transparent 62%);
+}
+#note::before{
+  background-color:var(--bg);
+  background-image:radial-gradient(ellipse 68% 45% at 50% 100%, var(--bg-radial-1), transparent 65%);
+}
+
 .foot{
   border-top:1px solid var(--border);
   padding:32px clamp(20px,5vw,64px) 48px;
