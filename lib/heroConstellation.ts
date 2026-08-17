@@ -1,5 +1,5 @@
 /* ==========================================================
-   HERO CONSTELLATION DATA — dedicated to the SkillGraphCanvas
+   HERO CONSTELLATION DATA — dedicated to the SkillConstellation
    component only. Deliberately NOT shared with SkillsSection.tsx
    (which reads SKILL_GRAPH from lib/content.ts instead).
 
