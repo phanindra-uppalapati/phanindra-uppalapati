@@ -59,7 +59,6 @@ function WorkCard({ item }: { item: WorkItem }) {
   const isArticle = item.kind === 'article';
   const flow = item.flow ? FLOWS[item.flow] : null;
   const pipeline = item.pipeline ? PIPELINES[item.pipeline] : null;
-  const hasMedia = !!(flow || pipeline || item.image);
   const hasMore = !!item.description && item.description.trim() !== item.summary.trim();
   const [expanded, setExpanded] = useState(false);
   const innerRef = useRef<HTMLDivElement>(null);

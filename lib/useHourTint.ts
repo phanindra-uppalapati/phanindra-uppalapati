@@ -40,6 +40,12 @@ export function useHourTint(): HourTint {
   const [tint, setTint] = useState<HourTint>(FALLBACK);
   useEffect(() => {
     const bucket = bucketForHour(new Date().getHours());
+    // The visitor's local hour is only knowable after mount (the server
+    // doesn't know their timezone, which is why `tint` above defaults to
+    // FALLBACK rather than computing this eagerly) — a one-time read-and-
+    // sync on mount, not an ongoing subscription, so useSyncExternalStore
+    // doesn't apply here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTint({ bucket, ...TINTS[bucket] });
   }, []);
   return tint;

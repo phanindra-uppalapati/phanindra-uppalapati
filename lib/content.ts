@@ -51,6 +51,37 @@ export const PROFILE: Profile = {
    side for a specific cluster (e.g. it keeps landing somewhere you don't
    like on your own content). Same idea per-skill via `SKILL_ABBREVIATIONS`
    below for the short mobile label. */
+/* One short line of real context per skill — where/how it's actually
+   been used, not a generic definition. Shown in the node tooltip
+   (hover on desktop, tap on mobile) as the "additional info" beyond
+   just the name. A skill with no entry here just shows its name alone
+   in the tooltip, so adding a new skill never breaks anything. */
+export const SKILL_INFO: Record<string, string> = {
+  'PL/I': 'Core language for batch processing systems, 2013–2018.',
+  COBOL: 'Maintained and extended legacy programs for Fortune 500 insurance workflows.',
+  JCL: 'Job control scripts orchestrating daily mainframe batch cycles.',
+  REXX: 'Automated mainframe operations and testing routines.',
+  React: 'UI layer for the InsureSign AI proof-of-concept.',
+  'Next.js': 'Framework behind this portfolio and recent proof-of-concept work.',
+  JSP: 'Early-career UI work on Java-based enterprise web apps.',
+  'Agentic Workflows': 'Directed an AI coding agent through a real 15-repo Spring Boot migration.',
+  'Multimodal Integration': 'Wired Gemini Vision into a document-decisioning pipeline for InsureSign AI.',
+  'Claude Code': 'Agent-assisted engineering across recent projects — including this site.',
+  Copilot: 'Daily pair-programming tool for faster, more confident shipping.',
+  AWS: 'Current production workloads run here for the Bloomington team.',
+  ROSA: 'Red Hat OpenShift on AWS — the managed Kubernetes platform behind current services.',
+  PCF: 'Deployed and operated services on Pivotal/Tanzu Cloud Foundry earlier in this role.',
+  PostgreSQL: 'Primary relational store for current microservices.',
+  Db2: "Worked with it on the mainframe-era systems this career began on.",
+  Redis: 'Caching and session state for backend services.',
+  'GitLab CI': 'Pipelines gating every deploy — including the AI-assisted migration.',
+  GitOps: 'Git-driven deployment workflow for the current OpenShift/ROSA environment.',
+  Kubernetes: 'Orchestration layer underneath current cloud-native services.',
+  Java: '13+ years, from mainframe-adjacent systems to today\u2019s microservices.',
+  'Spring Boot': 'Primary framework since 2019 — including leading its v3\u2192v4 migration.',
+  RabbitMQ: 'Message broker for async workflows between backend services.',
+};
+
 export type SkillCluster = {
   id: string;
   name: string;
@@ -59,18 +90,14 @@ export type SkillCluster = {
   labelSide?: 'top' | 'bottom' | 'left' | 'right';
 };
 
-/* Each cluster: id (used to reference it in SKILL_CONNECTIONS below), name,
-   hue, and its skills list. Position is NOT stored here — the graph
-   scatters clusters organically (a seeded, deterministic layout — stable
-   across reloads, not random each time) and pushes them apart until
-   nothing overlaps and everything stays inside the panel, so adding,
-   removing, or reordering a cluster just works with no coordinates to
-   hand-place. This same array also drives the plain-text Skills section,
-   so the two never drift out of sync. */
+/* Drives the plain-text Skills section grid only (SkillsSection.tsx).
+   The hero constellation graph has its own separate, independently
+   editable data source — see lib/heroConstellation.ts — so changing
+   one never affects the other. */
 export const SKILL_GRAPH: SkillCluster[] = [
   { id: 'mainframe', name: 'MAINFRAME', hue: '#C9A227', skills: ['PL/I', 'COBOL', 'JCL', 'REXX'] },
   { id: 'frontend', name: 'FRONTEND', hue: '#C4634F', skills: ['React', 'Next.js', 'JSP'] },
-  { id: 'ai', name: 'AI', hue: '#A855F7', skills: ['GitHub Copilot', 'OpenAI Codex', 'Claude Code', 'LLM Prompts'] },
+  { id: 'ai', name: 'AI', hue: '#A855F7', skills: ['Agentic Workflows', 'Multimodal Integration', 'Claude Code', 'Copilot'] },
   { id: 'cloud', name: 'CLOUD', hue: '#D0679A', skills: ['AWS', 'ROSA', 'PCF'] },
   { id: 'data', name: 'DATA', hue: '#3E7CB1', skills: ['PostgreSQL', 'Db2', 'Redis'] },
   { id: 'platform', name: 'PLATFORM', hue: '#7C6FE0', skills: ['GitLab CI', 'GitOps', 'Kubernetes'] },
@@ -83,10 +110,9 @@ export const SKILL_GRAPH: SkillCluster[] = [
    abbreviateSkill) so a newly added skill never breaks mobile layout —
    add an entry here only if the auto-shortened version looks off. */
 export const SKILL_ABBREVIATIONS: Record<string, string> = {
-  'GitHub Copilot': 'Copilot',
-  'OpenAI Codex': 'Codex',
+  'Agentic Workflows': 'Agentic',
+  'Multimodal Integration': 'Multimodal',
   'Claude Code': 'Claude',
-  'LLM Prompts': 'LLM',
   'PostgreSQL': 'Postgres',
   'GitLab CI': 'GitLab',
   'Kubernetes': 'K8s',
@@ -95,20 +121,36 @@ export const SKILL_ABBREVIATIONS: Record<string, string> = {
   'Next.js': 'Next',
 };
 
-/* Curated cluster-to-cluster edges — each pair reflects a real relationship
-   in how these domains actually connect in your work, not an exhaustive
-   mesh. Lines are drawn between the two clusters' outer edges (no center
-   hub in this design). Edit freely: entries just need to reference two ids
-   from SKILL_GRAPH above. */
-export const SKILL_CONNECTIONS: [string, string][] = [
-  ['mainframe', 'backend'], // legacy systems feeding into modern services — your own career arc
-  ['backend', 'frontend'], // service layer to UI
-  ['backend', 'platform'], // what CI/CD deploys
-  ['platform', 'cloud'], // where it deploys to
-  ['backend', 'data'], // application to persistence
-  ['data', 'cloud'], // managed data services
-  ['backend', 'ai'], // AI-assisted service development
-  ['platform', 'ai'], // AI-assisted tooling and CI/CD
+/* Cluster-to-cluster edges — each pair reflects a real relationship in how
+   these domains actually connect in your work, not an exhaustive mesh.
+   `weight` controls line treatment: 'primary' draws solid/stronger,
+   'secondary' draws dashed/subtle (see SkillGraphCanvas). These sit
+   alongside the avatar→domain spokes, which every domain gets
+   automatically and aren't listed here. Edit freely: entries just need
+   to reference two ids from SKILL_GRAPH above.
+
+   Note: a couple of pairs you dictated conflicted between the two lists
+   (e.g. 'Data–AI' and 'Backend–Frontend' each showed up under both
+   primary and secondary) — resolved to primary, since that was each
+   pair's first/stronger listing. 'Backend–AI' was in your original
+   11-pair list but dropped from the later primary/secondary pass, so
+   it's kept here as secondary rather than silently dropped. */
+export const SKILL_CONNECTIONS: { a: string; b: string; weight: 'primary' | 'secondary' }[] = [
+  // primary — strong, visible relationships
+  { a: 'backend', b: 'data', weight: 'primary' },
+  { a: 'backend', b: 'mainframe', weight: 'primary' },
+  { a: 'backend', b: 'frontend', weight: 'primary' },
+  { a: 'backend', b: 'cloud', weight: 'primary' },
+  { a: 'cloud', b: 'platform', weight: 'primary' },
+  { a: 'data', b: 'ai', weight: 'primary' },
+  { a: 'platform', b: 'ai', weight: 'primary' },
+  // secondary — real but less visually dominant
+  { a: 'mainframe', b: 'cloud', weight: 'secondary' },
+  { a: 'frontend', b: 'ai', weight: 'secondary' },
+  { a: 'data', b: 'cloud', weight: 'secondary' },
+  { a: 'mainframe', b: 'data', weight: 'secondary' },
+  { a: 'platform', b: 'backend', weight: 'secondary' },
+  { a: 'backend', b: 'ai', weight: 'secondary' },
 ];
 
 export type JourneyEntry = {
@@ -133,29 +175,28 @@ export const JOURNEY: JourneyEntry[] = [
     client: 'Fortune 500 Insurance Client',
     location: 'Chennai, India',
     tech: ['COBOL', 'PL/I', 'JCL', 'IMS', 'DB2'],
-    hue: '#5B7180',
+    hue: '#C9A227',
     notes: ['Mainframe engineering & enterprise systems'],
   },
-
   {
     period: 'Mar 2018 – Apr 2022',
     role: 'Team Lead',
     company: 'TCS',
     client: 'Fortune 500 Insurance Client',
-    location: 'Bloomington, IL / Chennai, India',
+    location: 'Chennai, India',
     tech: ['Java', 'Spring Boot', 'React', 'REST', 'SOAP'],
-    hue: '#3B82A0',
+    hue: '#2FA89D',
     notes: ['Java modernization & technical leadership'],
   },
-
   {
     period: 'Apr 2022 – Present',
     role: 'Senior Software Engineer',
     company: 'TCS',
     client: 'Fortune 500 Insurance Client',
-    location: 'Bloomington, IL, USA',
-    tech: ['Java', 'Spring Boot', 'AWS ROSA', 'GitLab CI/CD', 'Codex'],
-    hue: '#2FA89D',
+    location: 'Bloomington, Illinois, USA',
+    tech: ['Java', 'Spring Boot', 'AWS', 'ROSA', 'OpenShift', 'GitOps', 'AI-assisted Development'],
+    hue: 'var(--accent)',
+    current: true,
     notes: ['Cloud modernization & agentic engineering'],
   },
 ];

@@ -112,7 +112,7 @@ export function abbreviateSkill(label: string, overrides: Record<string, string>
   return firstWord.slice(0, 8) + '…';
 }
 
-export function debounce<T extends (...args: any[]) => void>(fn: T, wait = 150) {
+export function debounce<T extends (...args: unknown[]) => void>(fn: T, wait = 150) {
   let timer: ReturnType<typeof setTimeout>;
   return (...args: Parameters<T>) => {
     clearTimeout(timer);

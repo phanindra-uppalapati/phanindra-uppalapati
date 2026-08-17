@@ -3,7 +3,7 @@
    single column on narrow ones with the constellation flowing
    below the bio text (never overlapping it — see hero-grid).
    ========================================================== */
-.hero{position:relative; padding-block:14vh 10vh; overflow:hidden;}
+.hero{position:relative; padding-block:2vh 8vh; overflow:hidden;}
 
 /* Subtle time-of-day wash — a faint colored radial gradient, low
    enough alpha to read fine against either theme. No text, just mood. */
@@ -14,12 +14,21 @@
 }
 
 .hero-grid{
-  position:relative; z-index:1; display:grid; grid-template-columns:1.05fr 1fr;
-  gap:clamp(24px,5vw,64px); align-items:center;
-  max-width:1180px; margin:0 auto; padding-inline:clamp(20px,5vw,64px);
+  position:relative; z-index:1; display:grid;
+  /* min(48vw, 920px): identical to before at laptop/external-monitor
+     widths (48vw stays under 920px until ~1917px viewport), but stops
+     the text column from ballooning past hero-content's own 880px max
+     on larger displays — that runaway growth was what left a dead gap
+     between the bio text and the graph on big monitors. 920px (not
+     880px) keeps a few px of natural buffer so content never touches
+     the column edge. */
+  grid-template-columns:minmax(560px, min(48vw, 920px)) minmax(0, 1fr);
+  gap:0; align-items:center;
+  width:100%; max-width:none; margin:0; padding-inline:calc(clamp(20px,5vw,64px) + 4px);
 }
 
-.hero-content{min-width:0;}
+.hero-content{min-width:0; width:clamp(560px,50vw,880px); position:relative; z-index:3; top:clamp(-54px,-6vh,-24px);}
+
 .hero-eyebrow{
   font-family:var(--font-hand); font-weight:600; font-size:clamp(1.35rem,2.6vw,1.7rem);
   color:var(--accent); margin-bottom:2px;
@@ -31,9 +40,9 @@
 .hero-name-dot{color:var(--accent);}
 .hero-tagline{
   font-family:var(--font-display); font-weight:700; font-size:clamp(1.2rem,2.4vw,1.5rem);
-  color:var(--accent); line-height:1.4; margin-bottom:18px; max-width:520px;
+  color:var(--accent); line-height:1.4; margin-bottom:18px; max-width:none; width:100%;
 }
-.hero-bio{font-size:1rem; line-height:1.75; color:var(--text-secondary); margin-bottom:30px; max-width:500px;}
+.hero-bio{font-size:1rem; line-height:1.75; color:var(--text-secondary); margin-bottom:30px; max-width:none; width:100%;}
 
 .hero-actions{display:flex; flex-wrap:wrap; gap:14px; margin-bottom:24px;}
 .btn{
@@ -58,27 +67,108 @@
 }
 .hero-links a:hover{color:var(--accent);}
 
-/* ---- Constellation panel ---- */
+/* ---- Constellation panel ----
+   No aspect-ratio lock and a viewport-scaled height (not a small flat
+   max-height) so the graph can stay tall and immersive at its own
+   pace — see hero-grid above for the column split that gives this
+   panel roughly half the hero's width, next to the text column. */
 .hero-graph-panel{
-  position:relative; width:100%; aspect-ratio:1/1; max-height:640px;
-  min-height:340px;
+  position:relative;
+  z-index:1; width:100%; min-height:420px; height:clamp(500px, 82vh, 980px);
+  /* Soft one-sided fade on the leading (left) edge only — lets the
+     graph visually "flow toward" the text column instead of stopping
+     at a hard rectangular boundary, without any element actually
+     rendering behind the text itself. Sits within the panel's own
+     existing halo margin (clusters are already inset further than
+     this), so no cluster or label ever gets clipped by it. Desktop
+     only — see the min-width:900px block below; on the stacked mobile
+     layout the graph is full-width beneath the text, where a left
+     fade wouldn't mean anything and would just look like a clipped edge. */
+}
+@media (min-width:900px){
+  .hero-graph-panel{
+    /* Keep the hero text column untouched. Give the graph its own extra
+       horizontal canvas on the right so the canvas itself receives a
+       larger width (rather than merely scaling the finished panel). */
+    width:calc(100% + clamp(96px, 10vw, 168px));
+    /* Pulled in further than before (was -44/-76px) for a near-zero
+       visual gap against the now width-capped text column. */
+    margin-left:clamp(-100px, -6vw, -60px);
+    margin-right:0;
+    transform:none;
+    transform-origin:center center;
+    /* Soft fade on the leading (left) edge only, so the panel's
+       rectangular boundary doesn't read as a hard line where it meets
+       the text. Kept narrow (6%) — cluster halos sit well inside this
+       per the layout's own margin math, so nothing gets clipped. */
+    mask-image:linear-gradient(to right, transparent 0%, black 6%);
+    -webkit-mask-image:linear-gradient(to right, transparent 0%, black 6%);
+  }
 }
 #graphCanvas{position:absolute; inset:0; width:100%; height:100%; z-index:0; display:block;}
 .graph-tooltip{
-  position:absolute; pointer-events:none; z-index:3;
-  font-family:var(--font-mono); font-size:11px; letter-spacing:.02em;
-  background:var(--surface-elevated); color:var(--text-primary);
-  border:1px solid var(--border-strong); padding:5px 9px; border-radius:6px;
-  opacity:0; transform:translate(-50%,-130%); transition:opacity .15s ease;
-  white-space:nowrap; box-shadow:var(--shadow-sm);
+  position:absolute; pointer-events:none; z-index:3; max-width:200px;
+  background:var(--surface-elevated); border:1px solid var(--border-strong);
+  padding:7px 11px; border-radius:8px;
+  opacity:0; transform:translate(-50%,-124%); transition:opacity .15s ease;
+  box-shadow:var(--shadow-sm);
 }
 .graph-tooltip.is-visible{opacity:1;}
+.graph-tooltip-title{
+  font-family:var(--font-mono); font-weight:700; font-size:11.5px; letter-spacing:.02em;
+  color:var(--text-primary); white-space:nowrap;
+}
+.graph-tooltip-info{
+  font-family:var(--font-body); font-size:11.5px; line-height:1.42;
+  color:var(--text-secondary); margin-top:3px;
+}
+
+/* ---- Avatar hub — the ONLY center node ---- */
+.graph-hub{
+  --hub-hue: var(--accent);
+  position:absolute; top:50%; left:50%; z-index:2;
+  width:clamp(78px,11%,112px); aspect-ratio:1 / 1; height:auto; border-radius:50%;
+  transform:translate(-50%,-50%) scale(1);
+  border:1.5px solid color-mix(in srgb, var(--accent) 40%, var(--border-strong));
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent),
+             0 0 34px color-mix(in srgb, var(--accent) 22%, transparent), var(--shadow-sm);
+  animation:hubPulse 4.2s ease-in-out infinite;
+  will-change:left, top, transform, box-shadow;
+  cursor:pointer;
+}
+.graph-hub.is-active{
+  transform:translate(-50%,-50%) scale(1.045);
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--hub-hue) 45%, transparent),
+             0 0 46px color-mix(in srgb, var(--hub-hue) 40%, transparent), var(--shadow);
+}
+@keyframes hubPulse{
+  0%,100%{box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent), 0 0 30px color-mix(in srgb, var(--accent) 18%, transparent), var(--shadow-sm);}
+  50%{box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 26%, transparent), 0 0 42px color-mix(in srgb, var(--accent) 30%, transparent), var(--shadow-sm);}
+}
+@media (prefers-reduced-motion:reduce){.graph-hub{animation:none;}}
+.graph-hub-avatar{
+  position:relative; display:block; width:100%; height:100%; border-radius:50%; overflow:hidden;
+  background:var(--surface-elevated);
+}
+.graph-hub-avatar img{width:100%; height:100%; object-fit:cover; object-position:center 18%; display:block;}
+.graph-hub-tag{
+  position:absolute; top:100%; left:50%; transform:translate(-50%,10px);
+  margin-top:6px; padding:6px 12px; border-radius:20px; white-space:nowrap;
+  font-family:var(--font-mono); font-size:11.5px; color:var(--text-primary);
+  background:var(--surface-elevated); border:1px solid var(--border-strong); box-shadow:var(--shadow-sm);
+  opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
+}
+.graph-hub.is-active .graph-hub-tag{opacity:1; transform:translate(-50%,4px);}
 
 @media (max-width:900px){
+  .hero{padding-block:3vh 7vh;}
   .hero-grid{grid-template-columns:1fr;}
-  .hero-graph-panel{max-height:420px; margin-top:8px;}
+  .hero-content{width:100%;}
+  .hero-content{top:0;}
+  .hero-graph-panel{height:clamp(420px, 62vh, 640px); min-height:380px; margin-top:8px;}
   .hero-bio, .hero-tagline{max-width:100%;}
+  .graph-hub{width:clamp(52px,11%,64px); aspect-ratio:1 / 1; height:auto;}
 }
 @media (max-width:480px){
-  .hero-graph-panel{min-height:300px;}
+  .hero-graph-panel{min-height:340px;}
 }
