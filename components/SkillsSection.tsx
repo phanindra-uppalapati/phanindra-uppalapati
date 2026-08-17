@@ -1,4 +1,5 @@
 import { SKILL_GRAPH, SectionConfig } from '@/lib/content';
+import type { CSSProperties } from 'react';
 
 export default function SkillsSection({ cfg }: { cfg: SectionConfig }) {
   return (
@@ -13,7 +14,7 @@ export default function SkillsSection({ cfg }: { cfg: SectionConfig }) {
         {SKILL_GRAPH.map((c) => {
           const label = c.name.charAt(0) + c.name.slice(1).toLowerCase();
           return (
-            <div className="card skill-card" style={{ ['--hue' as any]: c.hue }} key={c.name}>
+            <div className="card skill-card" style={{ '--hue': c.hue } as CSSProperties} key={c.name}>
               <h3>{label}</h3>
               <p>{c.skills.join(' · ')}</p>
             </div>

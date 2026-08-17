@@ -44,6 +44,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const current = (document.documentElement.dataset.theme as Theme) || getPreferredTheme();
+    // Reading document/localStorage can only happen after mount (both are
+    // unavailable during SSR, which is why `theme` above defaults to a
+    // fixed 'dark' rather than computing this eagerly) — there's no
+    // external store to subscribe to here (useSyncExternalStore doesn't
+    // fit: this is a one-time read-and-sync, not an ongoing subscription;
+    // theme changes afterward flow through applyTheme's own setTheme call
+    // below, not through this effect).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(current);
   }, []);
 

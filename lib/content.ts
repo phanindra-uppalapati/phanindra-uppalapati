@@ -51,6 +51,37 @@ export const PROFILE: Profile = {
    side for a specific cluster (e.g. it keeps landing somewhere you don't
    like on your own content). Same idea per-skill via `SKILL_ABBREVIATIONS`
    below for the short mobile label. */
+/* One short line of real context per skill — where/how it's actually
+   been used, not a generic definition. Shown in the node tooltip
+   (hover on desktop, tap on mobile) as the "additional info" beyond
+   just the name. A skill with no entry here just shows its name alone
+   in the tooltip, so adding a new skill never breaks anything. */
+export const SKILL_INFO: Record<string, string> = {
+  'PL/I': 'Core language for batch processing systems, 2013–2018.',
+  COBOL: 'Maintained and extended legacy programs for Fortune 500 insurance workflows.',
+  JCL: 'Job control scripts orchestrating daily mainframe batch cycles.',
+  REXX: 'Automated mainframe operations and testing routines.',
+  React: 'UI layer for the InsureSign AI proof-of-concept.',
+  'Next.js': 'Framework behind this portfolio and recent proof-of-concept work.',
+  JSP: 'Early-career UI work on Java-based enterprise web apps.',
+  'Agentic Workflows': 'Directed an AI coding agent through a real 15-repo Spring Boot migration.',
+  'Multimodal Integration': 'Wired Gemini Vision into a document-decisioning pipeline for InsureSign AI.',
+  'Claude Code': 'Agent-assisted engineering across recent projects — including this site.',
+  Copilot: 'Daily pair-programming tool for faster, more confident shipping.',
+  AWS: 'Current production workloads run here for the Bloomington team.',
+  ROSA: 'Red Hat OpenShift on AWS — the managed Kubernetes platform behind current services.',
+  PCF: 'Deployed and operated services on Pivotal/Tanzu Cloud Foundry earlier in this role.',
+  PostgreSQL: 'Primary relational store for current microservices.',
+  Db2: "Worked with it on the mainframe-era systems this career began on.",
+  Redis: 'Caching and session state for backend services.',
+  'GitLab CI': 'Pipelines gating every deploy — including the AI-assisted migration.',
+  GitOps: 'Git-driven deployment workflow for the current OpenShift/ROSA environment.',
+  Kubernetes: 'Orchestration layer underneath current cloud-native services.',
+  Java: '13+ years, from mainframe-adjacent systems to today\u2019s microservices.',
+  'Spring Boot': 'Primary framework since 2019 — including leading its v3\u2192v4 migration.',
+  RabbitMQ: 'Message broker for async workflows between backend services.',
+};
+
 export type SkillCluster = {
   id: string;
   name: string;
@@ -59,14 +90,10 @@ export type SkillCluster = {
   labelSide?: 'top' | 'bottom' | 'left' | 'right';
 };
 
-/* Each cluster: id (used to reference it in SKILL_CONNECTIONS below), name,
-   hue, and its skills list. Position is NOT stored here — the graph
-   scatters clusters organically (a seeded, deterministic layout — stable
-   across reloads, not random each time) and pushes them apart until
-   nothing overlaps and everything stays inside the panel, so adding,
-   removing, or reordering a cluster just works with no coordinates to
-   hand-place. This same array also drives the plain-text Skills section,
-   so the two never drift out of sync. */
+/* Drives the plain-text Skills section grid only (SkillsSection.tsx).
+   The hero constellation graph has its own separate, independently
+   editable data source — see lib/heroConstellation.ts — so changing
+   one never affects the other. */
 export const SKILL_GRAPH: SkillCluster[] = [
   { id: 'mainframe', name: 'MAINFRAME', hue: '#C9A227', skills: ['PL/I', 'COBOL', 'JCL', 'REXX'] },
   { id: 'frontend', name: 'FRONTEND', hue: '#C4634F', skills: ['React', 'Next.js', 'JSP'] },
@@ -148,29 +175,28 @@ export const JOURNEY: JourneyEntry[] = [
     client: 'Fortune 500 Insurance Client',
     location: 'Chennai, India',
     tech: ['COBOL', 'PL/I', 'JCL', 'IMS', 'DB2'],
-    hue: '#5B7180',
+    hue: '#C9A227',
     notes: ['Mainframe engineering & enterprise systems'],
   },
-
   {
     period: 'Mar 2018 – Apr 2022',
     role: 'Team Lead',
     company: 'TCS',
     client: 'Fortune 500 Insurance Client',
-    location: 'Bloomington, IL / Chennai, India',
+    location: 'Chennai, India',
     tech: ['Java', 'Spring Boot', 'React', 'REST', 'SOAP'],
-    hue: '#3B82A0',
+    hue: '#2FA89D',
     notes: ['Java modernization & technical leadership'],
   },
-
   {
     period: 'Apr 2022 – Present',
     role: 'Senior Software Engineer',
     company: 'TCS',
     client: 'Fortune 500 Insurance Client',
-    location: 'Bloomington, IL, USA',
-    tech: ['Java', 'Spring Boot', 'AWS ROSA', 'GitLab CI/CD', 'Codex'],
-    hue: '#2FA89D',
+    location: 'Bloomington, Illinois, USA',
+    tech: ['Java', 'Spring Boot', 'AWS', 'ROSA', 'OpenShift', 'GitOps', 'AI-assisted Development'],
+    hue: 'var(--accent)',
+    current: true,
     notes: ['Cloud modernization & agentic engineering'],
   },
 ];
