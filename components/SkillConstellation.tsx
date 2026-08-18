@@ -298,9 +298,11 @@ export default function SkillConstellation({
         const end = { x: b.x - (endDir.x / endLen) * endR, y: b.y - (endDir.y / endLen) * endR };
 
         let alphaMul = 1;
-        if (anyHover) alphaMul = touchesHovered ? 1.3 : bothRelatedOrHovered ? 0.6 : 0.14;
-        const baseAlpha = edge.kind === 'spoke' ? 0.16 : edge.kind === 'primary' ? 0.36 : 0.2;
-        const alpha = clampNum(baseAlpha * alphaMul + (touchesHovered ? 0.28 : 0), 0, 0.95);
+        if (anyHover) alphaMul = touchesHovered ? 1.3 : bothRelatedOrHovered ? 0.7 : 0.22;
+        // Bumped well up from the original 0.16/0.36/0.2 — the network
+        // needs to read clearly at rest, not just reveal on hover.
+        const baseAlpha = edge.kind === 'spoke' ? 0.4 : edge.kind === 'primary' ? 0.68 : 0.46;
+        const alpha = clampNum(baseAlpha * alphaMul + (touchesHovered ? 0.28 : 0), 0, 0.98);
 
         const path = elRefs.current.get(`edgePath:${idx}`) as SVGPathElement | undefined;
         if (path) {
@@ -308,27 +310,41 @@ export default function SkillConstellation({
             ? `M${start.x},${start.y} Q${ctrl.x},${ctrl.y} ${end.x},${end.y}`
             : `M${start.x},${start.y} L${end.x},${end.y}`;
           path.setAttribute('d', d);
-          path.setAttribute('stroke-width', String((edge.kind === 'primary' ? 1.6 : edge.kind === 'spoke' ? 0.85 : 1) * (touchesHovered ? 1.25 : 1)));
+          path.setAttribute('stroke-width', String((edge.kind === 'primary' ? 2.1 : edge.kind === 'spoke' ? 1.3 : 1.6) * (touchesHovered ? 1.25 : 1)));
           path.setAttribute('opacity', String(alpha));
         }
 
         if (!reduceMotion && isActive) {
           const offset = idx / Math.max(1, cur.edges.length);
-          const p = (t / 9000 + offset) % 1;
-          const pt = ctrl
-            ? quadPoint(p, start.x, start.y, ctrl.x, ctrl.y, end.x, end.y)
-            : { x: start.x + (end.x - start.x) * p, y: start.y + (end.y - start.y) * p };
-          const glow = elRefs.current.get(`edgeGlow:${idx}`) as SVGCircleElement | undefined;
-          if (glow) {
-            glow.setAttribute('cx', String(pt.x));
-            glow.setAttribute('cy', String(pt.y));
-            glow.setAttribute('r', String(touchesHovered ? 2.6 : 2));
-            glow.setAttribute('opacity', String(clampNum((touchesHovered ? 1 : 0.85) * warmthGlow, 0, 1)));
-            glow.setAttribute('display', '');
-          }
+          // Slowed slightly (was /9000) so a bigger, bolder pulse still
+          // reads as a deliberate travel rather than a flicker.
+          const headP = (t / 10500 + offset) % 1;
+          const headR = touchesHovered ? 3.6 : 2.9;
+          const headOpacity = clampNum((touchesHovered ? 1 : 0.92) * warmthGlow, 0, 1);
+          const positions = [headP, headP - 0.018, headP - 0.036].map((p) => {
+            const pp = ((p % 1) + 1) % 1;
+            return ctrl
+              ? quadPoint(pp, start.x, start.y, ctrl.x, ctrl.y, end.x, end.y)
+              : { x: start.x + (end.x - start.x) * pp, y: start.y + (end.y - start.y) * pp };
+          });
+          const heads = [
+            { key: `edgeGlow:${idx}`, r: headR, o: headOpacity },
+            { key: `edgeGlowTail1:${idx}`, r: headR * 0.68, o: headOpacity * 0.5 },
+            { key: `edgeGlowTail2:${idx}`, r: headR * 0.42, o: headOpacity * 0.24 },
+          ];
+          heads.forEach(({ key, r, o }, i) => {
+            const el = elRefs.current.get(key) as SVGCircleElement | undefined;
+            if (!el) return;
+            el.setAttribute('cx', String(positions[i].x));
+            el.setAttribute('cy', String(positions[i].y));
+            el.setAttribute('r', String(r));
+            el.setAttribute('fill-opacity', String(o));
+            el.setAttribute('display', '');
+          });
         } else {
-          const glow = elRefs.current.get(`edgeGlow:${idx}`);
-          glow?.setAttribute('display', 'none');
+          [`edgeGlow:${idx}`, `edgeGlowTail1:${idx}`, `edgeGlowTail2:${idx}`].forEach((key) => {
+            elRefs.current.get(key)?.setAttribute('display', 'none');
+          });
         }
       });
 
@@ -505,7 +521,8 @@ export default function SkillConstellation({
         <defs>
           {CONSTELLATION_DATA.map((c) => (
             <radialGradient id={`halo-grad-${c.id}`} key={c.id}>
-              <stop offset="0%" stopColor={c.hue} stopOpacity="0.22" />
+              <stop offset="0%" stopColor={c.hue} style={{ stopOpacity: 'var(--halo-peak-opacity)' } as CSSProperties} />
+              <stop offset="55%" stopColor={c.hue} style={{ stopOpacity: 'calc(var(--halo-peak-opacity) * 0.45)' } as CSSProperties} />
               <stop offset="100%" stopColor={c.hue} stopOpacity="0" />
             </radialGradient>
           ))}
@@ -519,7 +536,9 @@ export default function SkillConstellation({
               fill="none"
               style={{ '--hue': edge.hue } as CSSProperties}
             />
-            <circle ref={setRef(`edgeGlow:${idx}`)} className="constellation-edge-glow" style={{ '--hue': edge.hue } as CSSProperties} />
+            <circle ref={setRef(`edgeGlowTail2:${idx}`)} className="constellation-edge-glow is-tail" style={{ '--hue': edge.hue } as CSSProperties} />
+            <circle ref={setRef(`edgeGlowTail1:${idx}`)} className="constellation-edge-glow is-tail" style={{ '--hue': edge.hue } as CSSProperties} />
+            <circle ref={setRef(`edgeGlow:${idx}`)} className="constellation-edge-glow is-head" style={{ '--hue': edge.hue } as CSSProperties} />
           </g>
         ))}
 

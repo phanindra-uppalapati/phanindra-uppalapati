@@ -316,5 +316,7 @@
 }
 .note-body{font-size:1rem; line-height:1.85; color:var(--text-secondary); margin-bottom:18px;}
 .note-divider{width:60px; height:1px; border-top:1px dashed var(--border-strong); margin:30px 0 18px;}
-.note-signature{font-family:var(--font-hand); font-size:2.4rem; color:var(--accent); line-height:1; margin-bottom:6px;}
-.note-motto{font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-secondary);}
+.note-signature-wrap{margin-bottom:0;}
+.note-signature-mask{display:inline-block;}
+.note-signature-svg{height:2.6rem; width:auto; display:block; overflow:visible;}
+.note-motto{font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-secondary); margin-top:14px;}

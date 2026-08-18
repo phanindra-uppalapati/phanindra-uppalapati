@@ -107,43 +107,91 @@
 }
 .constellation-svg{position:absolute; inset:0; width:100%; height:100%; z-index:0; display:block; overflow:visible;}
 
+/* ---- Theme-tunable intensity knobs ----
+   The light-theme background is no longer near-white (see tokens.css —
+   it's a warm ~86%-lightness paper tone now), so the constellation no
+   longer needs a separate "quieter" light-mode treatment the way it
+   did against pure white: both themes share the same peak opacity and
+   near-full line opacity, and mostly the same hue-mix percentages.
+   --text-primary itself already flips between near-white (dark) and
+   near-black (light), so color-mix(hue, X%, text-primary) naturally
+   produces a bright pastel tint in dark mode and a rich, saturated
+   tone in light mode from the same X — light gets a few points more
+   hue in the mix below just to offset how much faster mixing toward
+   near-black reads as "duller" per percentage point than mixing
+   toward near-white. */
+:root{
+  --halo-peak-opacity: 0.24;
+  --constellation-line-opacity: 1;
+  --constellation-structure-mix: 60%; /* hue vs text-primary, for rings/outline/ticks/labels */
+  --constellation-dot-mix: 80%; /* hue vs text-primary, for the node-dot outline */
+  /* Uniform deepen/desaturate applied to every RAW --hue paint (dot
+     fill, halo gradient, pulse glow) — the elements that had no
+     existing text-primary mixing to lean on. A no-op in dark theme;
+     light theme turns both down so the same 7 hues read as muted
+     jewel tones instead of crayon-bright, without hand-authoring a
+     second palette anywhere — change a cluster's color once, in
+     heroConstellation.ts, and both themes derive from it. */
+  --constellation-color-sat: 1;
+  --constellation-color-bright: 1;
+}
+[data-theme="light"]{
+  --halo-peak-opacity: 0.22;
+  --constellation-line-opacity: 1;
+  --constellation-structure-mix: 55%;
+  --constellation-dot-mix: 66%;
+  --constellation-color-sat: 0.82;
+  --constellation-color-bright: 0.78;
+}
+
 /* ---- Edges (hub spokes + domain-to-domain mesh) ---- */
-.constellation-edge{fill:none; stroke-linecap:round; transition:stroke .2s ease;}
-.constellation-edge.is-spoke{stroke:color-mix(in srgb, var(--hue) 55%, var(--text-primary));}
-.constellation-edge:not(.is-spoke){stroke:color-mix(in srgb, var(--hue) 42%, var(--text-secondary));}
+.constellation-edge{fill:none; stroke-linecap:round; stroke-opacity:var(--constellation-line-opacity); transition:stroke .2s ease, stroke-opacity .2s ease;}
+.constellation-edge.is-spoke{stroke:color-mix(in srgb, var(--hue) var(--constellation-structure-mix), var(--text-primary));}
+.constellation-edge:not(.is-spoke){stroke:color-mix(in srgb, var(--hue) calc(var(--constellation-structure-mix) - 13%), var(--text-secondary));}
 .constellation-edge.is-dashed{stroke-dasharray:5 5;}
-[data-theme="light"] .constellation-edge.is-spoke{stroke:color-mix(in srgb, var(--hue) 68%, black);}
-[data-theme="light"] .constellation-edge:not(.is-spoke){stroke:color-mix(in srgb, var(--hue) 34%, var(--text-secondary));}
-.constellation-edge-glow{fill:var(--hue); filter:blur(3px);}
+.constellation-edge-glow{
+  fill:var(--hue); --glow-blur:2.5px;
+  filter:blur(var(--glow-blur)) saturate(var(--constellation-color-sat)) brightness(var(--constellation-color-bright));
+}
+.constellation-edge-glow.is-tail{--glow-blur:3.5px;}
 
 /* ---- Cluster (halo + ring + outline + name label) ---- */
 .constellation-cluster{cursor:pointer;}
 .constellation-halo-hit{cursor:pointer;}
-.constellation-ring{stroke:color-mix(in srgb, var(--hue) 60%, var(--text-primary)); stroke-dasharray:6 5; transition:stroke .2s ease;}
-.constellation-outline{stroke:color-mix(in srgb, var(--hue) 55%, var(--text-primary)); transition:stroke .2s ease;}
+.constellation-halo{mix-blend-mode:normal; filter:saturate(var(--constellation-color-sat)) brightness(var(--constellation-color-bright));}
+.constellation-ring{
+  stroke:color-mix(in srgb, var(--hue) var(--constellation-structure-mix), var(--text-primary));
+  stroke-dasharray:6 5; stroke-opacity:var(--constellation-line-opacity); transition:stroke .2s ease, stroke-opacity .2s ease;
+}
+.constellation-outline{
+  stroke:color-mix(in srgb, var(--hue) var(--constellation-structure-mix), var(--text-primary));
+  stroke-opacity:calc(var(--constellation-line-opacity) * 0.85); transition:stroke .2s ease, stroke-opacity .2s ease;
+}
 .constellation-cluster-label{
   font-family:var(--font-mono); font-weight:700; font-size:11px; letter-spacing:.03em;
-  fill:color-mix(in srgb, var(--hue) 62%, var(--text-primary)); user-select:none;
+  fill:color-mix(in srgb, var(--hue) calc(var(--constellation-structure-mix) + 12%), var(--text-primary)); user-select:none;
 }
-[data-theme="light"] .constellation-ring,
-[data-theme="light"] .constellation-outline,
-[data-theme="light"] .constellation-cluster-label{fill:color-mix(in srgb, var(--hue) 55%, black); stroke:color-mix(in srgb, var(--hue) 55%, black);}
 
 /* ---- Individual skill nodes ---- */
 .constellation-node{cursor:pointer;}
 .constellation-node-hit{cursor:pointer;}
 .constellation-node-dot{
-  fill:var(--hue); stroke:color-mix(in srgb, var(--hue) 78%, var(--text-primary)); stroke-width:1.4;
-  transition:stroke .2s ease;
+  fill:var(--hue); fill-opacity:var(--constellation-line-opacity);
+  stroke:color-mix(in srgb, var(--hue) var(--constellation-dot-mix), var(--text-primary)); stroke-width:1.4; stroke-opacity:var(--constellation-line-opacity);
+  filter:saturate(var(--constellation-color-sat)) brightness(var(--constellation-color-bright));
+  transition:stroke .2s ease, fill-opacity .2s ease, stroke-opacity .2s ease, filter .2s ease;
 }
-[data-theme="light"] .constellation-node-dot{stroke:color-mix(in srgb, var(--hue) 60%, black);}
-.constellation-node-tick{stroke:color-mix(in srgb, var(--hue) 60%, var(--text-primary)); stroke-width:1;}
-[data-theme="light"] .constellation-node-tick{stroke:color-mix(in srgb, var(--hue) 55%, black);}
+.constellation-node-tick{
+  stroke:color-mix(in srgb, var(--hue) var(--constellation-structure-mix), var(--text-primary)); stroke-width:1;
+  stroke-opacity:var(--constellation-line-opacity);
+}
 .constellation-node-label{
   font-family:var(--font-mono); font-size:10.5px; fill:var(--text-primary); user-select:none;
 }
 .constellation-node:hover .constellation-node-dot,
-.constellation-cluster:hover .constellation-node-dot{filter:drop-shadow(0 0 6px color-mix(in srgb, var(--hue) 70%, transparent));}
+.constellation-cluster:hover .constellation-node-dot{
+  filter:saturate(var(--constellation-color-sat)) brightness(var(--constellation-color-bright)) drop-shadow(0 0 6px color-mix(in srgb, var(--hue) 70%, transparent));
+}
 .graph-tooltip{
   position:absolute; pointer-events:none; z-index:3; max-width:200px;
   background:var(--surface-elevated); border:1px solid var(--border-strong);

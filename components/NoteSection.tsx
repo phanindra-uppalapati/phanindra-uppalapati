@@ -1,4 +1,5 @@
 import { NOTE, SectionConfig } from '@/lib/content';
+import SignatureAnimation from './SignatureAnimation';
 
 export default function NoteSection({ cfg }: { cfg: SectionConfig }) {
   return (
@@ -14,8 +15,7 @@ export default function NoteSection({ cfg }: { cfg: SectionConfig }) {
           </p>
         ))}
         <div className="note-divider" />
-        <p className="note-signature">{NOTE.signature}</p>
-        <p className="note-motto">{NOTE.motto}</p>
+        <SignatureAnimation />
       </div>
     </section>
   );

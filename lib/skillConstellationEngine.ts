@@ -139,7 +139,13 @@ export function computeHaloR(W: number, H: number, isMobile: boolean): number {
    Ported 1:1 from the canvas version — same constants, same 150-iteration
    relaxation — only the W/H/haloR/isMobile inputs are now explicit
    params instead of closure variables. */
-export function clusterBasePositions(W: number, H: number, isMobile: boolean, haloR: number): Point[] {
+export function clusterBasePositions(
+  W: number,
+  H: number,
+  isMobile: boolean,
+  spacingR: number,
+  marginR: number = spacingR
+): Point[] {
   const cx = W / 2;
   const cy = H / 2;
   const count = CONSTELLATION_DATA.length;
@@ -148,15 +154,18 @@ export function clusterBasePositions(W: number, H: number, isMobile: boolean, ha
   const startAngle = -Math.PI / 2 - Math.PI / count;
 
   const labelMargin = isMobile ? 34 : 108;
-  const marginX = clampNum(haloR + labelMargin, 0, W / 2 - 4);
-  const marginY = clampNum(haloR + (isMobile ? 16 : 34), 0, H / 2 - 4);
+  // marginR (the bigger, rendered halo) keeps the visible circle itself
+  // from clipping the panel edge; spacingR (below) keeps the same
+  // inter-cluster distances as before the halo grew.
+  const marginX = clampNum(marginR + labelMargin, 0, W / 2 - 4);
+  const marginY = clampNum(marginR + (isMobile ? 16 : 34), 0, H / 2 - 4);
 
   const positions = CONSTELLATION_DATA.map((_, i) => {
     const angle = startAngle + (i / count) * Math.PI * 2;
     return { x: cx + Math.cos(angle) * radiusX, y: cy + Math.sin(angle) * radiusY, idealAngle: angle };
   });
 
-  const minSep = haloR * 2 * HOVER_EXPANSION * 1.22;
+  const minSep = spacingR * 2 * HOVER_EXPANSION * 1.22;
   const springK = 0.06;
   const repelK = 0.65;
 
@@ -437,14 +446,20 @@ export type ConstellationLayout = {
  *  top of this in the renderer, not recomputed here. */
 export function computeLayout(W: number, H: number): ConstellationLayout {
   const isMobile = W < 560;
-  const haloR = computeHaloR(W, H, isMobile);
-  const clusterCenters = clusterBasePositions(W, H, isMobile, haloR);
-  const nodes = buildNodes(clusterCenters, haloR, isMobile);
-  const clusterLabels = planLabels(W, H, isMobile, haloR, clusterCenters, nodes);
+  const baseHaloR = computeHaloR(W, H, isMobile);
+  // The rendered/visual halo is bigger than the spacing math below —
+  // clusters get more internal room for their small skill nodes
+  // without the overall layout footprint (how far clusters sit from
+  // each other) growing by nearly as much.
+  const visualR = baseHaloR * 1.18;
+  const spacingR = baseHaloR * 1.06;
+  const clusterCenters = clusterBasePositions(W, H, isMobile, spacingR, visualR);
+  const nodes = buildNodes(clusterCenters, visualR, isMobile);
+  const clusterLabels = planLabels(W, H, isMobile, visualR, clusterCenters, nodes);
   // Edges are a shared module-level array (EDGES) mutated in place with
   // solved control points — cloned per layout so a resize doesn't leave
   // stale curves from the previous panel size on screen momentarily.
   const edges = EDGES.map((e) => ({ ...e }));
-  computeEdgeCurves(W, H, haloR, clusterCenters, edges);
-  return { W, H, isMobile, haloR, clusterCenters, nodes, clusterLabels, edges };
+  computeEdgeCurves(W, H, visualR, clusterCenters, edges);
+  return { W, H, isMobile, haloR: visualR, clusterCenters, nodes, clusterLabels, edges };
 }
