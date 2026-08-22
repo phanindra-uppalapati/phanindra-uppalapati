@@ -63,10 +63,16 @@
   background-color:var(--bg);
   background-image:radial-gradient(ellipse 68% 45% at 50% 100%, var(--bg-radial-1), transparent 65%);
 }
+/* Light theme only: long-form reading gets almost none of the ambient
+   tint (dark theme's #note tint is untouched — see --bg-radial-note,
+   defined only under [data-theme="light"] in tokens.css). */
+[data-theme="light"] #note::before{
+  background-image:radial-gradient(ellipse 68% 45% at 50% 100%, var(--bg-radial-note), transparent 65%);
+}
 
 .foot{
   border-top:1px solid var(--border);
   padding:32px clamp(20px,5vw,64px) 48px;
   display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
-  font-family:var(--font-mono); font-size:12px; color:var(--text-secondary);
+  font-family:var(--font-mono); font-size:12px; color:var(--text-muted);
 }

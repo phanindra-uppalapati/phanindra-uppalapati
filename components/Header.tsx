@@ -64,25 +64,51 @@ export default function Header() {
     };
   }, [menuOpen]);
 
+  // Mirrors FloatingNav's approach: same IntersectionObserver pattern,
+  // scoped to this header so both the desktop nav and the mobile panel
+  // (which share the same navItems markup, rendered twice) pick up the
+  // active state via a single query across the whole header.
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    const sectionEls = SECTIONS.map((s) => document.getElementById(s.id)).filter(
+      (el): el is HTMLElement => Boolean(el)
+    );
+    if (!sectionEls.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const links = Array.from(header.querySelectorAll<HTMLAnchorElement>('[data-section]'));
+          links.forEach((a) => a.classList.toggle('is-active', a.dataset.section === entry.target.id));
+        });
+      },
+      { rootMargin: '-40% 0px -50% 0px', threshold: 0 }
+    );
+    sectionEls.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
   const navLinks = SECTIONS.filter((s) => s.topNav);
   const closeMenu = () => setMenuOpen(false);
 
   const navItems = (
     <>
       {navLinks.map((s) => (
-        <a key={s.id} href={`#${s.id}`} onClick={closeMenu}>
+        <a key={s.id} href={`#${s.id}`} data-section={s.id} onClick={closeMenu}>
           {s.label}
         </a>
       ))}
       <span className="nav-divider" />
       <a href={PROFILE.resume} target="_blank" rel="noopener" onClick={closeMenu}>
-        Resume
+        Resume <span aria-hidden="true">↗</span>
       </a>
       <a href={PROFILE.links.linkedin} target="_blank" rel="noopener" onClick={closeMenu}>
-        LinkedIn
+        LinkedIn <span aria-hidden="true">↗</span>
       </a>
       <a href={PROFILE.links.github} target="_blank" rel="noopener" onClick={closeMenu}>
-        GitHub
+        GitHub <span aria-hidden="true">↗</span>
       </a>
     </>
   );

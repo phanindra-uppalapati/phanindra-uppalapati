@@ -6,7 +6,7 @@
    know) are separate concerns that should be swappable on their
    own schedule. Replacing the portrait later is a one-line change
    here — drop the new image in /public/avatars/ and update `image`;
-   nothing in SkillGraphCanvas or content.ts needs to move.
+   nothing in SkillConstellation or content.ts needs to move.
    ========================================================== */
 export const HERO_AVATAR = {
   image: '/avatars/hero-avatar.png',

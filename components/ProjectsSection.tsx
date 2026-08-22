@@ -90,6 +90,7 @@ function WorkCard({ item }: { item: WorkItem }) {
       className={
         'card wi-inner' +
         (flow ? ' has-media' : '') +
+        (flow && item.stackedMedia ? ' has-media-stacked' : '') +
         (pipeline ? ' has-pipeline' : '') +
         (hasOverflow ? ' has-overflow' : '') +
         (isArticle ? ' is-article' : '')
@@ -172,11 +173,13 @@ function WorkCard({ item }: { item: WorkItem }) {
 
         {flow?.disclaimer && <p className="wi-disclaimer">{flow.disclaimer}</p>}
 
-        <div className="tags tags-center">
-          {item.tags.map((t, i) => (
-            <span key={`${t}-${i}`}>{t}</span>
-          ))}
-        </div>
+        {!pipeline && !(flow && item.stackedMedia) && (
+          <div className="tags tags-center">
+            {item.tags.map((t, i) => (
+              <span key={`${t}-${i}`}>{t}</span>
+            ))}
+          </div>
+        )}
 
         {isArticle ? (
           item.articleUrl && (
@@ -207,6 +210,22 @@ function WorkCard({ item }: { item: WorkItem }) {
       {pipeline && (
         <div className="wi-pipeline">
           <MigrationPipeline pipeline={pipeline} />
+        </div>
+      )}
+
+      {pipeline && (
+        <div className="tags tags-center wi-tags-below">
+          {item.tags.map((t, i) => (
+            <span key={`${t}-${i}`}>{t}</span>
+          ))}
+        </div>
+      )}
+
+      {flow && item.stackedMedia && (
+        <div className="tags tags-center wi-tags-below wi-tags-below-media">
+          {item.tags.map((t, i) => (
+            <span key={`${t}-${i}`}>{t}</span>
+          ))}
         </div>
       )}
     </div>

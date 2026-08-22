@@ -28,8 +28,24 @@
 .mark:hover{transform:rotate(-4deg) scale(1.05);}
 .top-links{justify-self:center; display:flex; align-items:center; gap:20px; overflow-x:auto; scrollbar-width:none; max-width:100%;}
 .top-links::-webkit-scrollbar{display:none;}
-.top-links a{font-family:var(--font-mono); font-size:12.5px; color:var(--text-secondary); text-decoration:none; white-space:nowrap; transition:color .2s;}
-.top-links a:hover{color:var(--text-primary);}
+.top-links a{
+  position:relative; font-family:var(--font-mono); font-size:12.5px; color:var(--text-secondary);
+  text-decoration:none; white-space:nowrap; padding-bottom:2px; transition:color .2s;
+}
+/* Grows from left to right on hover/focus — classic underline cue, not
+   present at rest, so it reads as an affordance rather than decoration. */
+.top-links a::after{
+  content:''; position:absolute; left:0; right:100%; bottom:0; height:1px;
+  background:currentColor; transition:right .25s ease;
+}
+.top-links a:hover, .top-links a:focus-visible{color:var(--text-primary);}
+.top-links a:hover::after, .top-links a:focus-visible::after{right:0;}
+/* Active section: mirrors the floating side-nav's accent-dot treatment,
+   so the header and the side rail agree on where you are. Stays
+   permanently underlined (not just on hover) and in accent color. */
+.top-links a.is-active{color:var(--accent);}
+.top-links a.is-active::after{right:0; background:var(--accent);}
+@media (prefers-reduced-motion:reduce){.top-links a::after{transition:none;}}
 .nav-divider{width:1px; height:14px; background:var(--border-strong); flex:none;}
 .topbar-right{justify-self:end; display:flex; align-items:center; gap:10px;}
 .theme-toggle{
@@ -79,10 +95,20 @@
 }
 .mobile-nav-panel nav a:last-child{border-bottom:none;}
 .mobile-nav-panel nav a:hover{color:var(--text-primary);}
+.mobile-nav-panel nav a.is-active{color:var(--accent); border-bottom-color:var(--accent);}
 .mobile-nav-panel .nav-divider{display:none;}
 @media (prefers-reduced-motion:reduce){.mobile-nav-panel, .hamburger span{transition:none;}}
 
 @media (max-width:900px){
+  /* Below this breakpoint there's no center nav to speak of — the
+     hamburger IS the nav. Switching to a plain 2-part flex (mark | hamburger
+     +theme) avoids relying on the desktop 3-column grid's middle track being
+     "empty" via display:none, which auto-placement doesn't actually treat
+     as an empty slot — it compacts the remaining items instead, pulling
+     .topbar-right into the center column. Flex + space-between sidesteps
+     that entirely: with .top-links hidden, mark and topbar-right are the
+     only two flex items, pinned to the two ends by definition. */
+  .topbar{display:flex; justify-content:space-between; align-items:center;}
   .top-links{display:none;}
   .hamburger{display:flex;}
 }

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PROFILE } from '@/lib/content';
 import { useHourTint } from '@/lib/useHourTint';
-import SkillGraphCanvas from './SkillGraphCanvas';
+import SkillConstellation from './SkillConstellation';
 
 function ResumeIcon() {
   return (
@@ -49,6 +49,7 @@ function ArrowIcon() {
 
 export default function Hero() {
   const graphPanelRef = useRef<HTMLDivElement>(null);
+  const heroContentRef = useRef<HTMLDivElement>(null);
   const firstName = PROFILE.name.split(' ')[0];
   const tint = useHourTint();
 
@@ -80,7 +81,7 @@ export default function Hero() {
     >
       <div className="hero-tint" aria-hidden="true" />
       <div className="hero-grid">
-        <div className="hero-content reveal">
+        <div className="hero-content reveal" ref={heroContentRef}>
           <p className="hero-eyebrow">Hey there, I&rsquo;m</p>
           <h1 className="hero-name">
             {firstName}
@@ -113,7 +114,7 @@ export default function Hero() {
         </div>
 
         <div className="hero-graph-panel reveal" ref={graphPanelRef}>
-          {graphStarted && <SkillGraphCanvas panelRef={graphPanelRef} hourWarmth={tint.warmth} />}
+          {graphStarted && <SkillConstellation panelRef={graphPanelRef} textRef={heroContentRef} hourWarmth={tint.warmth} />}
         </div>
       </div>
     </section>
