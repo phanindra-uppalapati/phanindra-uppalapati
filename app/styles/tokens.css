@@ -17,6 +17,7 @@
   --surface-elevated:#191B22;
   --text-primary:#F4F5F7;
   --text-secondary:#9497A6;
+  --text-muted:#9497A6; /* alias of --text-secondary: dark theme keeps one reading-text tone, unchanged */
   --border:rgba(244,245,247,0.09);
   --border-strong:rgba(244,245,247,0.16);
   --accent:#5E6AD2;
@@ -26,19 +27,32 @@
   --shadow-sm:0 8px 24px rgba(0,0,0,0.30);
 }
 
+/* Light theme — premium, calm, editorial. Warm off-white base with an
+   ambient lavender/ice-blue mesh (see hero.css .hero::before and the
+   --bg-radial-* tokens below, consumed by layout.css's per-section
+   ::before tints) that's strongest in the hero, quieter through the
+   middle sections, and nearly absent behind long-form reading (#note)
+   so it never competes with body copy. --text-secondary carries the
+   bulk of reading text (Body); --text-muted is reserved for small
+   mono/meta labels (dates, tags, captions) so those stay visually
+   quieter than actual prose. */
 [data-theme="light"]{
-  --bg:#EEF0F3;
-  --bg-radial-1:rgba(44,76,140,0.08);
-  --bg-radial-2:rgba(12,122,111,0.07);
-  --surface:#FFFFFF;
-  --surface-elevated:#F4F5F8;
-  --text-primary:#14151A;
-  --text-secondary:#6B6E79;
-  --border:rgba(20,21,26,0.10);
-  --border-strong:rgba(20,21,26,0.17);
-  --accent:#2C4C8C;
-  --accent-2:#0C7A6F;
+  --bg:#F7F7F5;
+  --bg-radial-1:rgba(220,202,240,0.09); /* lavender — journey/skills, mid-page */
+  --bg-radial-2:rgba(201,223,234,0.09); /* ice blue — awards/projects, mid-page */
+  --bg-radial-hero-1:rgba(220,202,240,0.16); /* lavender — hero, strongest */
+  --bg-radial-hero-2:rgba(201,223,234,0.13); /* ice blue — hero, strongest */
+  --bg-radial-note:rgba(220,202,240,0.025); /* almost none — behind long-form reading */
+  --surface:#FBFBF9;
+  --surface-elevated:#FDFDFB;
+  --text-primary:#18202B;
+  --text-secondary:#3F4850;
+  --text-muted:#68717A;
+  --border:rgba(24,32,43,0.08);
+  --border-strong:rgba(24,32,43,0.14);
+  --accent:#5B4BB7;
+  --accent-2:#2D6B8A;
   --accent-contrast:#FFFFFF;
-  --shadow:0 20px 50px rgba(20,21,26,0.11);
-  --shadow-sm:0 8px 24px rgba(20,21,26,0.07);
+  --shadow:0 20px 44px rgba(24,32,43,0.08);
+  --shadow-sm:0 8px 20px rgba(24,32,43,0.05);
 }

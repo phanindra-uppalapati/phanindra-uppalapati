@@ -17,7 +17,7 @@
 .pipeline-step-node.is-clickable circle{stroke-dasharray:2 2;}
 .pipeline-step-node:focus-visible circle{outline:2px solid var(--node-hue, var(--accent)); outline-offset:2px;}
 .pipeline-step-node.is-open circle{fill:color-mix(in srgb, var(--node-hue, var(--accent)) 14%, var(--surface));}
-.pipeline-step-label{font-family:var(--font-mono); fill:var(--text-secondary);}
+.pipeline-step-label{font-family:var(--font-mono); fill:var(--text-muted);}
 
 /* Edges here behave like FlowDiagram's branch edges: dim and still until
    the walking pointer reaches them, then they brighten and march. */
@@ -26,11 +26,27 @@
 .pipeline-step-edge.is-active .flow-edge-base{opacity:.9; stroke-width:2.4;}
 .pipeline-step-edge.is-active .flow-edge-flow{opacity:1;}
 
+/* The Checks → Fix branch: only slightly dimmer than the main line by
+   default, since it's a real path the pointer regularly takes. */
+.pipeline-branch-edge .flow-edge-base{opacity:.3; stroke-dasharray:3 3;}
+.pipeline-branch-edge.is-active .flow-edge-base{opacity:.9; stroke-width:2.4; stroke-dasharray:none;}
+
+/* The Fix → Validate loop-back: sits dimmest at rest so the eye still
+   reads the main line first, then lights up fully once traversed. */
+.pipeline-loop-edge .flow-edge-base{opacity:.16; stroke-dasharray:3 3;}
+.pipeline-loop-edge.is-active .flow-edge-base{opacity:.85; stroke-width:2.4; stroke-dasharray:none;}
+
+/* The Fix node itself: a dashed ring at rest (like other clickable
+   nodes) so it visually reads as "conditional" rather than a step
+   that's always on the happy path. */
+.pipeline-branch-node circle{stroke-dasharray:3 3;}
+.pipeline-branch-node.is-active circle{stroke-dasharray:none;}
+
 .pipeline-caption{min-height:32px;}
 
 .pipeline-legend{
   margin-top:10px; display:flex; align-items:center; justify-content:center; gap:6px 16px; flex-wrap:wrap;
-  font-family:var(--font-mono); font-size:11px; color:var(--text-secondary); letter-spacing:.02em;
+  font-family:var(--font-mono); font-size:11px; color:var(--text-muted); letter-spacing:.02em;
 }
 .pipeline-legend-dot{width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:2px;}
 

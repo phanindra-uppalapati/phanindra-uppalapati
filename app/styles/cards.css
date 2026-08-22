@@ -37,7 +37,7 @@
    ========================================================== */
 .carousel{position:relative;}
 .carousel-meta{display:flex; justify-content:center; margin-bottom:16px;}
-.carousel-counter{font-family:var(--font-mono); font-size:12px; letter-spacing:.08em; color:var(--text-secondary);}
+.carousel-counter{font-family:var(--font-mono); font-size:12px; letter-spacing:.08em; color:var(--text-muted);}
 
 .carousel-viewport{position:relative;}
 .carousel-nav{
@@ -75,9 +75,9 @@
   width:100%; padding:clamp(20px,3vw,36px);
   display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:6px;
   overflow-y:hidden;
-  height:clamp(420px, 56vh, 560px);
+  height:clamp(460px, 60vh, 600px);
 }
-.wi-slide.is-feature .wi-inner{height:clamp(480px, 62vh, 640px);}
+.wi-slide.is-feature .wi-inner{height:clamp(520px, 66vh, 680px);}
 /* Scrolling (and the scrollbar itself) only turns on once JS confirms a
    card's content actually exceeds its fixed desktop height — see
    WorkCard's overflow check. Most cards never get this class. */
@@ -107,7 +107,61 @@
 }
 
 .has-pipeline .wi-body{max-width:640px;}
-.wi-pipeline{width:100%; margin-top:8px;}
+/* Pipeline cards get less vertical padding and tighter spacing above the
+   diagram than other cards — this is where the fixed-height slide most
+   needs the room, so the animation can render in full without the card
+   having to scroll internally. */
+.wi-inner.has-pipeline{padding-top:clamp(14px,2vw,24px); padding-bottom:clamp(14px,2vw,24px);}
+.has-pipeline .wi-readmore{margin-top:6px;}
+.has-pipeline .project-links-center{margin-top:10px;}
+.wi-inner.has-pipeline{gap:2px;}
+.wi-pipeline{width:100%; margin-top:2px;}
+.wi-tags-below{max-width:640px;}
+
+/* Project 1 opts into the same "text on top, full-width diagram below"
+   shape as the pipeline cards, instead of the standard has-media
+   side-by-side row — the flow diagram was capped at 340px sharing a row
+   with text; stacked, it gets the same ~640px it would as a pipeline
+   card. `order` flips the visual sequence without touching the JSX,
+   since wi-media renders before wi-body in the markup. Every override
+   here targets the SAME properties has-media sets at 900px+, so at that
+   breakpoint has-media-stacked cleanly wins (later in the cascade, equal
+   specificity) while has-media's own row layout stays intact for any
+   other flow-diagram project that doesn't opt in. */
+.wi-inner.has-media-stacked{gap:2px; justify-content:flex-start;}
+.wi-inner.has-media-stacked .wi-media{order:2; margin-top:0;}
+.wi-inner.has-media-stacked .wi-body{order:1;}
+.wi-inner.has-media-stacked .wi-tags-below-media{order:3;}
+/* Links move up to sit right after the subtitle: everything that used to
+   come between subtitle and links (stats, summary, description toggle,
+   live panel, disclaimer) shifts to order:1, while links stay at the
+   default order:0 — same tier as eyebrow/title/subtitle, so within that
+   tier they simply keep their DOM order (last of the three). */
+.wi-inner.has-media-stacked .wi-stats,
+.wi-inner.has-media-stacked .wi-summary,
+.wi-inner.has-media-stacked .wi-expand,
+.wi-inner.has-media-stacked .wi-readmore,
+.wi-inner.has-media-stacked .live-panel,
+.wi-inner.has-media-stacked .wi-disclaimer{order:1;}
+.wi-inner.has-media-stacked .project-links-center{margin-top:8px; margin-bottom:4px;}
+@media (min-width:900px){
+  .wi-inner.has-media-stacked{
+    flex-direction:column; align-items:center; text-align:center; gap:2px;
+    padding-top:clamp(14px,2vw,24px); padding-bottom:clamp(14px,2vw,24px);
+  }
+  .wi-inner.has-media-stacked .wi-media{flex:none; max-width:640px;}
+  .wi-inner.has-media-stacked .wi-body{align-items:center; max-width:640px;}
+  .wi-inner.has-media-stacked .tags-center,
+  .wi-inner.has-media-stacked .project-links-center{justify-content:center;}
+  .wi-inner.has-media-stacked .wi-subtitle,
+  .wi-inner.has-media-stacked .wi-summary,
+  .wi-inner.has-media-stacked .wi-description,
+  .wi-inner.has-media-stacked .wi-disclaimer{margin-left:auto; margin-right:auto;}
+}
+
+/* An eyebrow row with no badge and no live chip renders empty — collapse
+   it entirely instead of leaving its margin as dead space above the title. */
+.wi-eyebrow-row:empty{display:none;}
 
 .badge{
   display:inline-block; font-family:var(--font-mono); font-size:10px; letter-spacing:.08em;
@@ -116,7 +170,7 @@
 }
 .wi-eyebrow-row{display:flex; align-items:center; gap:8px; margin-bottom:16px;}
 .wi-badge{margin-bottom:0;}
-.wi-badge-article{color:var(--text-secondary); border-color:var(--border-strong);}
+.wi-badge-article{color:var(--text-muted); border-color:var(--border-strong);}
 
 .live-chip{
   display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:10px;
@@ -128,7 +182,7 @@
 .live-panel{
   width:100%; display:flex; align-items:center; gap:9px; margin:10px 0 2px; padding:10px 14px;
   background:color-mix(in srgb, var(--text-primary) 5%, transparent); border:1px dashed var(--border-strong);
-  border-radius:10px; font-family:var(--font-mono); font-size:11.5px; color:var(--text-secondary);
+  border-radius:10px; font-family:var(--font-mono); font-size:11.5px; color:var(--text-muted);
 }
 .live-panel-dot{width:6px; height:6px; border-radius:50%; background:#e0554d; flex:none; animation:liveDotPulse 1.6s ease-in-out infinite;}
 @media (prefers-reduced-motion:reduce){.live-dot,.live-panel-dot{animation:none;}}
@@ -140,14 +194,14 @@
   font-family:var(--font-display); font-weight:700; font-size:clamp(1.25rem,2.6vw,1.6rem); color:var(--accent);
 }
 .wi-stat-icon{display:inline-flex; color:var(--accent); opacity:.8;}
-.wi-stat-label{font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-secondary);}
+.wi-stat-label{font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted);}
 
 .wi-title{font-family:var(--font-display); font-weight:700; font-size:clamp(1.25rem,2.6vw,1.7rem); margin-bottom:8px; line-height:1.25;}
 .wi-subtitle{color:var(--text-secondary); font-size:.96rem; max-width:520px; margin:0 auto 4px;}
-.wi-meta{font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; color:var(--text-secondary); opacity:.85; margin:0 auto 4px;}
+.wi-meta{font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; color:var(--text-muted); opacity:.85; margin:0 auto 4px;}
 .wi-strapline{font-style:italic; color:var(--accent); font-size:1rem; margin:16px 0;}
 .wi-summary{color:var(--text-secondary); line-height:1.7; max-width:560px; margin:12px auto 0;}
-.wi-disclaimer{font-size:.78rem; color:var(--text-secondary); opacity:.7; max-width:520px; margin:0 auto 18px;}
+.wi-disclaimer{font-size:.78rem; color:var(--text-muted); opacity:.7; max-width:520px; margin:0 auto 18px;}
 
 /* Read-more reveal via the grid-rows trick — smooth height animation
    with no JS measuring, no layout jump. */
@@ -165,7 +219,7 @@
 @media (prefers-reduced-motion:reduce){.wi-expand{transition:none;} .wi-readmore-chevron{transition:none;}}
 
 .tags{display:flex; gap:8px; flex-wrap:wrap; margin-top:auto;}
-.tags span{font-family:var(--font-mono); font-size:10px; color:var(--text-secondary); border:1px solid var(--border-strong); padding:2px 9px; border-radius:20px;}
+.tags span{font-family:var(--font-mono); font-size:10px; color:var(--text-muted); border:1px solid var(--border-strong); padding:2px 9px; border-radius:20px;}
 .tags-center{justify-content:center; margin-top:14px;}
 .project-links{display:flex; gap:12px; flex-wrap:wrap;}
 .project-links-center{justify-content:center; margin-top:22px;}
@@ -209,11 +263,11 @@
 }
 
 /* ---- Awards — vertical timeline with a Selected/All toggle ---- */
-.award-employer-sub{font-family:var(--font-mono); font-size:12px; color:var(--text-secondary); margin-top:6px;}
+.award-employer-sub{font-family:var(--font-mono); font-size:12px; color:var(--text-muted); margin-top:6px;}
 
 .award-toggle{display:inline-flex; gap:4px; padding:4px; margin:22px auto 0; background:var(--surface); border:1px solid var(--border-strong); border-radius:999px; width:max-content;}
 .award-toggle-btn{
-  font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--text-secondary);
+  font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--text-muted);
   background:none; border:none; border-radius:999px; padding:8px 16px; cursor:pointer;
   transition:background .2s ease, color .2s ease;
 }
@@ -244,14 +298,14 @@
 .award-chevron.is-open{transform:rotate(180deg);}
 
 .award-name{font-family:var(--font-display); font-weight:600; font-size:.98rem; color:var(--text-primary); line-height:1.35;}
-.award-org{font-size:.82rem; color:var(--text-secondary); opacity:.85;}
-.award-date{font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; color:var(--text-secondary); white-space:nowrap; margin-top:2px;}
+.award-org{font-size:.82rem; color:var(--text-muted); opacity:.85;}
+.award-date{font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; color:var(--text-muted); white-space:nowrap; margin-top:2px;}
 
 .award-date-list{
   list-style:none; padding:10px 0 0; margin:8px 0 0; border-top:1px solid var(--border);
   display:flex; flex-direction:column; gap:5px;
 }
-.award-date-list li{font-family:var(--font-mono); font-size:11px; color:var(--text-secondary); letter-spacing:.03em;}
+.award-date-list li{font-family:var(--font-mono); font-size:11px; color:var(--text-muted); letter-spacing:.03em;}
 
 @media (max-width:480px){
   .award-grid{grid-template-columns:1fr;}
@@ -303,7 +357,10 @@
 
 
 .note-section{display:flex; justify-content:center;}
-.note-card{max-width:660px; width:100%; padding:clamp(32px,5vw,56px);}
+/* Letter-like max-width that grows with the viewport instead of staying
+   fixed at 660px — avoids a cramped column with dead space on wide
+   monitors while still reading like a personal note, not a full-bleed block. */
+.note-card{max-width:660px; width:100%; padding:clamp(28px,4vw,44px);}
 .note-heading{
   font-family:var(--font-display); font-weight:700;
   font-size:clamp(1.6rem,3.4vw,2.15rem); line-height:1.18;
@@ -312,11 +369,31 @@
 .note-quote{
   font-family:var(--font-display); font-weight:500;
   font-size:clamp(1.05rem,2vw,1.3rem); line-height:1.55; color:var(--text-secondary);
-  border-left:2px solid var(--accent); padding-left:20px; margin-bottom:30px; opacity:.95;
+  border-left:2px solid var(--accent); padding-left:20px; margin-bottom:20px; opacity:.95;
 }
-.note-body{font-size:1rem; line-height:1.85; color:var(--text-secondary); margin-bottom:18px;}
-.note-divider{width:60px; height:1px; border-top:1px dashed var(--border-strong); margin:30px 0 18px;}
+.note-body{font-size:1rem; line-height:1.85; color:var(--text-secondary); margin-bottom:14px; text-indent:2em;}
+
+/* Tablet: a touch more breathing room than the mobile 660px cap */
+@media (min-width:768px){
+  .note-card{max-width:720px;}
+}
+/* Small desktop / laptop */
+@media (min-width:1024px){
+  .note-card{max-width:780px;}
+  .note-body{font-size:1.05rem;}
+}
+/* Large monitors — widen further so the card doesn't float in a sea of
+   empty space, but cap well short of full-bleed so it still reads as a
+   letter, not a report column. */
+@media (min-width:1440px){
+  .note-card{max-width:860px; padding:clamp(40px,3.4vw,56px);}
+  .note-body{font-size:1.1rem;}
+}
+@media (min-width:1920px){
+  .note-card{max-width:920px;}
+}
+.note-divider{width:60px; height:1px; border-top:1px dashed var(--border-strong); margin:20px 0 14px;}
 .note-signature-wrap{margin-bottom:0;}
 .note-signature-mask{display:inline-block;}
 .note-signature-svg{height:2.6rem; width:auto; display:block; overflow:visible;}
-.note-motto{font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-secondary); margin-top:14px;}
+.note-motto{font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted); margin-top:14px;}

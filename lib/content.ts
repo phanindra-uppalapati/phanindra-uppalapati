@@ -82,35 +82,35 @@ export type JourneyEntry = {
    withheld on a public page. */
 export const JOURNEY: JourneyEntry[] = [
   {
-    period: '2013 – 2018',
-    role: 'Mainframe Engineer',
+    period: 'Jun 2013 – Mar 2018',
+    role: 'Software Developer — Mainframe',
     company: 'TCS',
-    client: 'Fortune 500 Insurance & Financial Services Client',
+    client: 'Fortune 500 Insurance Client',
     location: 'Chennai, India',
-    tech: ['PL/I', 'COBOL', 'JCL', 'REXX'],
+    tech: ['COBOL', 'PL/I', 'JCL', 'IMS', 'DB2'],
     hue: '#C9A227',
-    notes: ['Edit — add a key achievement or responsibility from this chapter.'],
+    notes: ['Mainframe engineering & enterprise systems'],
   },
   {
-    period: '2019 – 2022',
-    role: 'Backend Engineer',
+    period: 'Mar 2018 – Apr 2022',
+    role: 'Team Lead',
     company: 'TCS',
-    client: 'Fortune 500 Insurance & Financial Services Client',
+    client: 'Fortune 500 Insurance Client',
     location: 'Chennai, India',
-    tech: ['Java', 'Spring Boot', 'Microservices'],
+    tech: ['Java', 'Spring Boot', 'React', 'REST', 'SOAP'],
     hue: '#2FA89D',
-    notes: ['Edit — add a key achievement or responsibility from this chapter.'],
+    notes: ['Java modernization & technical leadership'],
   },
   {
-    period: '2022 – Present',
+    period: 'Apr 2022 – Present',
     role: 'Senior Software Engineer',
     company: 'TCS',
-    client: 'Fortune 500 Insurance & Financial Services Client',
-    location: 'Bloomington, Illinois',
+    client: 'Fortune 500 Insurance Client',
+    location: 'Bloomington, Illinois, USA',
     tech: ['Java', 'Spring Boot', 'AWS', 'ROSA', 'OpenShift', 'GitOps', 'AI-assisted Development'],
     hue: 'var(--accent)',
     current: true,
-    notes: ['Edit — add a key achievement or responsibility from this chapter.'],
+    notes: ['Cloud modernization & agentic engineering'],
   },
 ];
 
@@ -174,6 +174,8 @@ export type PipelineStep = {
   lane: MigrationLane;
   caption: string; // narrates this moment while the step is active
   detail?: string; // optional — click-to-reveal extra explanation
+  role?: 'branch'; // marks the off-spine failure-loop node ('fix') — laid out
+  // below the main line instead of taking a slot in it
 };
 export type PipelineData = {
   ariaLabel: string;
@@ -184,7 +186,7 @@ export type PipelineData = {
 export const PIPELINES: Record<string, PipelineData> = {
   'spring-boot-migration': {
     ariaLabel:
-      'A migration workflow: the agent analyzes, migrates, and validates the repository, a developer approves the change, and the agent runs automated checks and promotes to production. Approval is the one step that always stays human; if a check fails, the agent fixes recognized issues itself or escalates unclear ones to the developer before retrying.',
+      'A migration workflow: the agent analyzes, migrates, and validates the repository, then a developer approves the change, and the agent runs automated checks. If checks fail, the agent moves to a Fix step, applies the fix, and the repository loops back through Validate and Approve before Checks runs again. Once checks pass, the agent promotes to production. Approval is the one step that always stays human.',
     legend: { agent: 'Agent', developer: 'Developer' },
     steps: [
       {
@@ -221,8 +223,17 @@ export const PIPELINES: Record<string, PipelineData> = {
         icon: '\u2699\ufe0f',
         lane: 'agent',
         caption: 'CI/CD and a smoke test confirm the build is production-ready.',
+        detail: 'On failure the repo routes to Fix, not back to square one \u2014 see the loop below.',
+      },
+      {
+        id: 'fix',
+        label: 'Fix',
+        icon: '\ud83d\udd27',
+        lane: 'agent',
+        role: 'branch',
+        caption: 'Recognized failures get an automatic fix; anything ambiguous escalates to a developer — then back to Validate.',
         detail:
-          'A failed check is triaged first: a recognized pattern is fixed by the agent automatically; anything ambiguous is escalated to the developer to investigate. Either way, the fix loops back to Validate before trying again.',
+          'A recognized failure pattern is fixed by the agent automatically; anything ambiguous is escalated to the developer to investigate. Either way, the repo re-enters the loop at Validate.',
       },
       {
         id: 'promote',
@@ -268,6 +279,12 @@ export type WorkItem = {
   flow?: string;
   pipeline?: string;
   image?: string;
+  // kind: 'project' with `flow` only — opts into the stacked layout (text
+  // block on top, full-width diagram below, like the pipeline cards)
+  // instead of the default side-by-side has-media row. Scoped per-item so
+  // future flow-diagram projects keep the standard layout unless they ask
+  // for this one too.
+  stackedMedia?: boolean;
   repoUrl?: string;
   demoUrl?: string;
   // kind: 'article' only
@@ -282,6 +299,7 @@ export const WORK_ITEMS: WorkItem[] = [
   {
     kind: 'project',
     title: 'InsureSign AI',
+    stackedMedia: true,
     subtitle: 'Confidence-based signature verification & intelligent workflow routing',
     summary:
       'AI assesses each document for a signature — a deterministic decision engine, not the model itself, decides what happens next.',
@@ -294,15 +312,15 @@ export const WORK_ITEMS: WorkItem[] = [
   },
   {
     kind: 'project',
-    title: 'Spring Boot 4 Migration: 15 Repositories in 7 Days',
+    title: 'Spring Boot 4 Migration, Agent-Driven',
     subtitle: 'AI-assisted migration with a human approval gate',
-    summary: 'An AI coding agent handled the mechanical migration work across 15 repos — every merge still gated by a human reviewer.',
+    summary: 'An OpenAI Codex agent ran the migration end to end — analyzing, rewriting, and validating each repo before handing off for review.',
     description:
-      'An OpenAI Codex-based skill handled the mechanical work of migrating fifteen Spring Boot repositories from version 3 to 4 — dependency bumps, config changes, API rewrites — while every consequential decision, from what to merge to what shipped to production, stayed with a human reviewer.',
+      'The workflow started as one manual migration — the patterns it surfaced became a reusable skill that handled dependency bumps, config changes, and API rewrites across the other fourteen repos. Only the decisions that mattered — what to merge, what shipped to production — stayed with a person. When an automated check failed, the agent diagnosed the issue, applied a fix, and re-queued the repo without waiting on someone to unblock it.',
     tags: ['Spring Boot 4', 'OpenAI Codex', 'CI/CD', 'AI-assisted Development'],
     stats: [
       { value: '15', label: 'Repositories', icon: 'repo' },
-      { value: '7', label: 'Days', icon: 'clock' },
+      { value: '~45 → 7', label: 'Engineering Days', icon: 'clock' },
       { value: 'AI-assisted', label: 'Migration', icon: 'sparkle' },
     ],
     pipeline: 'spring-boot-migration',
@@ -322,9 +340,9 @@ export const NOTE: Note = {
   quote: '"We don\'t always choose the systems we inherit. We do choose what we leave behind."',
   heading: 'A Note Before We Work Together',
   paragraphs: [
-    "Every major transition in my career felt like a new beginning. From Mainframes to Java, and later to cloud platforms, each chapter meant learning unfamiliar technologies, adapting to new constraints, and earning trust all over again. Looking back, the technologies were never the real story. Learning, adapting, and leaving every system better than I found it have remained constant.",
-    "Good engineering begins long before the first line of code. It begins with understanding the problem, asking better questions, and resisting the temptation to fix what hasn't been fully understood. I've learned that if a system can't be explained clearly, it probably isn't understood well enough — and the best solutions rarely appear until the problem itself becomes clear.",
-    "I've come to believe that the most valuable engineers aren't remembered for the number of systems they built or the technologies they mastered. They're remembered because people trusted them with difficult problems, learned from working alongside them, and inherited software that was easier to understand than when they found it. That's the standard I try to live up to every day.",
+    "Every major transition in my career — Mainframes to Java, then to cloud — meant learning unfamiliar technology, adapting to new constraints, and earning trust all over again. But the technologies were never the real story. What's remained constant is learning, adapting, and leaving every system better than I found it.",
+    "Good engineering begins before the first line of code — with understanding the problem, asking better questions, and resisting the urge to fix what isn't yet understood. If a system can't be explained clearly, it probably isn't understood well enough; the best solutions rarely appear until the problem does.",
+    "The most valuable engineers aren't remembered for how many systems they built or technologies they mastered. They're remembered for being trusted with hard problems, for what others learned working alongside them, and for leaving software easier to understand than they found it. That's the standard I hold myself to.",
   ],
   signature: 'Phanindra',
   motto: 'Understanding first. Everything else follows.',

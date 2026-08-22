@@ -5,6 +5,20 @@
    ========================================================== */
 .hero{position:relative; padding-block:2vh 8vh; overflow:hidden;}
 
+/* Light theme only: large, heavily diffused lavender/ice-blue mesh —
+   the strongest instance of the ambient tint on the page (dialed down
+   through the middle sections and almost off behind long-form reading;
+   see layout.css). Two big, soft-edged blobs read as ambient light
+   rather than a visible gradient. Sits behind .hero-tint (the existing
+   hour-of-day mood wash, unrelated and untouched) and all content.
+   Dark theme is untouched: this rule only exists under [data-theme="light"]. */
+[data-theme="light"] .hero::before{
+  content:''; position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:
+    radial-gradient(ellipse 72% 62% at 12% 14%, var(--bg-radial-hero-1), transparent 68%),
+    radial-gradient(ellipse 66% 58% at 90% 86%, var(--bg-radial-hero-2), transparent 66%);
+}
+
 /* Subtle time-of-day wash — a faint colored radial gradient, low
    enough alpha to read fine against either theme. No text, just mood. */
 .hero-tint{
