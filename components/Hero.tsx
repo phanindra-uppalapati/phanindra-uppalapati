@@ -72,6 +72,27 @@ export default function Hero() {
     return () => observer.disconnect();
   }, []);
 
+  // Scroll cue visibility: JS feature-detection instead of brittle CSS
+  // height breakpoints. Hidden on touch/coarse-pointer devices (where a
+  // "scroll" hint is unnecessary — swiping is the native affordance), and
+  // hidden whenever the page doesn't actually overflow the viewport (no
+  // point inviting a scroll that goes nowhere). Re-checked on resize since
+  // rotating a device or resizing a window can change both conditions.
+  const [showScrollCue, setShowScrollCue] = useState(false);
+  useEffect(() => {
+    const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+    if (isCoarsePointer) {
+      setShowScrollCue(false);
+      return;
+    }
+    const checkOverflow = () => {
+      setShowScrollCue(document.documentElement.scrollHeight > window.innerHeight + 40);
+    };
+    checkOverflow();
+    window.addEventListener('resize', checkOverflow);
+    return () => window.removeEventListener('resize', checkOverflow);
+  }, []);
+
   return (
     <section
       id="hero"
@@ -81,36 +102,59 @@ export default function Hero() {
     >
       <div className="hero-tint" aria-hidden="true" />
       <div className="hero-grid">
-        <div className="hero-content reveal" ref={heroContentRef}>
-          <p className="hero-eyebrow">Hey there, I&rsquo;m</p>
-          <h1 className="hero-name">
-            {firstName}
-            <span className="hero-name-dot">.</span>
-          </h1>
-          <p className="hero-tagline">{PROFILE.tagline}</p>
-          <p className="hero-bio">{PROFILE.bio}</p>
-          <div className="hero-actions">
-            <a className="btn primary" href={PROFILE.ctas.primary.href}>
-              <ArrowIcon /> {PROFILE.ctas.primary.label}
-            </a>
-            <a className="btn outline" href={PROFILE.ctas.secondary.href}>
-              {PROFILE.ctas.secondary.label} <ArrowIcon />
-            </a>
+        <div className="hero-text-col">
+          <div className="hero-content reveal" ref={heroContentRef}>
+            <p className="hero-eyebrow">Hey there, I&rsquo;m</p>
+            <h1 className="hero-name">
+              {firstName}
+              <span className="hero-name-dot">.</span>
+            </h1>
+            <p className="hero-tagline">{PROFILE.tagline}</p>
+            <p className="hero-bio">{PROFILE.bio}</p>
+            <div className="hero-actions">
+              <a className="btn primary" href={PROFILE.ctas.primary.href}>
+                <ArrowIcon /> {PROFILE.ctas.primary.label}
+              </a>
+              <a className="btn outline" href={PROFILE.ctas.secondary.href}>
+                {PROFILE.ctas.secondary.label} <ArrowIcon />
+              </a>
+            </div>
+            <div className="hero-links">
+              <a href={PROFILE.resume} target="_blank" rel="noopener">
+                <ResumeIcon /> Resume
+              </a>
+              <a href={PROFILE.links.linkedin} target="_blank" rel="noopener">
+                <ProfileLinkIcon /> LinkedIn
+              </a>
+              <a href={PROFILE.links.github} target="_blank" rel="noopener">
+                <CodeIcon /> GitHub
+              </a>
+              <a href={PROFILE.links.email}>
+                <EnvelopeIcon /> Email
+              </a>
+            </div>
           </div>
-          <div className="hero-links">
-            <a href={PROFILE.resume} target="_blank" rel="noopener">
-              <ResumeIcon /> Resume
-            </a>
-            <a href={PROFILE.links.linkedin} target="_blank" rel="noopener">
-              <ProfileLinkIcon /> LinkedIn
-            </a>
-            <a href={PROFILE.links.github} target="_blank" rel="noopener">
-              <CodeIcon /> GitHub
-            </a>
-            <a href={PROFILE.links.email}>
-              <EnvelopeIcon /> Email
-            </a>
-          </div>
+
+          {showScrollCue && (
+            <button
+              type="button"
+              className="hero-scroll-cue"
+              aria-label="Scroll to Engineering Journey"
+              onClick={() => {
+                const target = document.getElementById('journey');
+                if (!target) return;
+                const nav = document.querySelector('.topbar') as HTMLElement | null;
+                const navHeight = nav ? nav.getBoundingClientRect().height : 0;
+                const top = target.getBoundingClientRect().top + window.scrollY - navHeight;
+                window.scrollTo({ top, behavior: 'smooth' });
+              }}
+            >
+              <span className="hero-scroll-cue-label">SCROLL TO EXPLORE</span>
+              <span className="hero-scroll-cue-mouse">
+                <span className="hero-scroll-cue-wheel" />
+              </span>
+            </button>
+          )}
         </div>
 
         <div className="hero-graph-panel reveal" ref={graphPanelRef}>

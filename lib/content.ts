@@ -365,8 +365,8 @@ export type SectionConfig = {
 export const SECTIONS: SectionConfig[] = [
   { id: 'hero', label: 'Hero', kind: 'hero', topNav: false },
   { id: 'journey', label: 'Journey', kind: 'journey', topNav: true, eyebrow: 'THE PATH', title: 'Engineering Journey' },
-  { id: 'awards', label: 'Awards', kind: 'awards', topNav: true, eyebrow: 'RECOGNITION', title: 'Awards' },
   { id: 'skills', label: 'Skills', kind: 'skills', topNav: true, eyebrow: 'TECHNICAL TOOLKIT', title: 'Skills' },
   { id: 'projects', label: 'Projects', kind: 'projects', topNav: true, eyebrow: 'SELECTED WORK', title: 'Projects' },
+  { id: 'awards', label: 'Awards', kind: 'awards', topNav: true, eyebrow: 'RECOGNITION', title: 'Awards' },
   { id: 'note', label: 'Note', kind: 'note', topNav: true, eyebrow: 'BEFORE WE BEGIN', title: 'A Note' },
 ];
