@@ -13,9 +13,9 @@ import { useRevealAnimations } from '@/lib/useRevealAnimations';
 const RENDERERS: Record<string, (cfg: SectionConfig) => React.ReactNode> = {
   hero: () => <Hero />,
   journey: (cfg) => <JourneySection cfg={cfg} />,
-  awards: (cfg) => <AwardsSection cfg={cfg} />,
   skills: (cfg) => <SkillsSection cfg={cfg} />,
   projects: (cfg) => <ProjectsSection cfg={cfg} />,
+  awards: (cfg) => <AwardsSection cfg={cfg} />,
   note: (cfg) => <NoteSection cfg={cfg} />,
 };
 

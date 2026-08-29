@@ -66,7 +66,7 @@ export default function AwardsSection({ cfg }: { cfg: SectionConfig }) {
         <h2 className="section-title" id={`${cfg.id}Title`}>
           {cfg.title}
         </h2>
-        {employer && <p className="award-employer-sub">at {employer}</p>}
+        {false &&employer && <p className="award-employer-sub">at {employer}</p>}
       </div>
 
       <div className="award-toggle reveal" role="group" aria-label="Filter awards">
