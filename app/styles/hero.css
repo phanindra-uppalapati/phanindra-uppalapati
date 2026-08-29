@@ -41,6 +41,19 @@
   width:100%; max-width:none; margin:0; padding-inline:calc(clamp(20px,5vw,64px) + 4px);
 }
 
+/* Wrapper for the text column. This — not .hero-content — is the grid
+   item now: it's explicitly placed at (row 1, col 1) and stretched to
+   the full row height (align-self:stretch overrides the grid's own
+   align-items:center), giving the scroll cue a full-height, positioned
+   parent to sit at the bottom of, without affecting hero-content's own
+   vertical centering (recreated here via flex) or hero-graph-panel's
+   placement (left on plain auto-placement, so it still auto-flows to
+   column 2 on desktop and stacks below on mobile exactly as before). */
+.hero-text-col{
+  grid-column:1; grid-row:1; align-self:stretch; min-width:0;
+  position:relative; display:flex; flex-direction:column; justify-content:center;
+}
+
 .hero-content{min-width:0; width:clamp(560px,50vw,880px); position:relative; z-index:3; top:clamp(-54px,-6vh,-24px);}
 
 .hero-eyebrow{
@@ -272,3 +285,80 @@
 @media (max-width:480px){
   .hero-graph-panel{min-height:340px;}
 }
+
+/* Scroll cue
+   Placed as a third grid item inside .hero-grid (column 1 = text column)
+   so it centers under the hero TEXT only, not the constellation, and
+   aligns to the bottom of the grid row automatically — no JS math. */
+.hero-scroll-cue{
+  position:absolute; left:50%; bottom:clamp(6px,2vh,20px); transform:translateX(-50%);
+  display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1vh,8px);
+  background:none; border:none; cursor:pointer; padding:8px; z-index:3;
+  color:var(--text-secondary); opacity:.85;
+  transition:opacity .2s ease, transform .2s ease, color .2s ease;
+  animation:heroScrollFloat 2.6s ease-in-out infinite;
+}
+.hero-scroll-cue:hover,
+.hero-scroll-cue:focus-visible{
+  opacity:1; color:var(--accent); transform:translateX(-50%) translateY(-2px);
+}
+.hero-scroll-cue:focus-visible{outline:2px solid var(--accent); outline-offset:4px; border-radius:8px;}
+.hero-scroll-cue-label{
+  font-family:var(--font-mono); font-size:clamp(9.5px,0.75vw,11px); letter-spacing:.12em; text-transform:uppercase;
+  white-space:nowrap;
+}
+.hero-scroll-cue-mouse{
+  position:relative;
+  width:clamp(18px,1.6vw,22px); height:clamp(28px,2.4vw,34px); border-radius:12px;
+  border:1.5px solid color-mix(in srgb, currentColor 55%, var(--border-strong));
+  display:flex; justify-content:center; padding-top:6px; box-sizing:border-box;
+  background:var(--surface-elevated);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent),
+    0 3px 10px color-mix(in srgb, var(--accent) 14%, transparent);
+  transition:box-shadow .25s ease, border-color .25s ease;
+}
+/* Ambient glow: a blurred radial accent halo behind the mouse icon,
+   breathing slowly in sync with the cue's idle float so it reads as
+   part of the same organic motion rather than a separate effect. */
+.hero-scroll-cue-mouse::before{
+  content:''; position:absolute; inset:-12px; border-radius:50%;
+  background:radial-gradient(circle, color-mix(in srgb, var(--accent) 38%, transparent) 0%, transparent 72%);
+  filter:blur(7px); z-index:-1;
+  animation:heroScrollGlow 2.6s ease-in-out infinite;
+}
+.hero-scroll-cue:hover .hero-scroll-cue-mouse,
+.hero-scroll-cue:focus-visible .hero-scroll-cue-mouse{
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent),
+    0 4px 14px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.hero-scroll-cue:hover .hero-scroll-cue-mouse::before,
+.hero-scroll-cue:focus-visible .hero-scroll-cue-mouse::before{
+  background:radial-gradient(circle, color-mix(in srgb, var(--accent) 58%, transparent) 0%, transparent 72%);
+}
+.hero-scroll-cue-wheel{
+  width:3px; height:7px; border-radius:2px; background:currentColor;
+  animation:heroScrollWheel 1.8s ease-in-out infinite;
+}
+@keyframes heroScrollFloat{
+  0%,100%{transform:translateX(-50%) translateY(0);}
+  50%{transform:translateX(-50%) translateY(5px);}
+}
+@keyframes heroScrollGlow{
+  0%,100%{opacity:.55; filter:blur(6px);}
+  50%{opacity:1; filter:blur(9px);}
+}
+@keyframes heroScrollWheel{
+  0%{opacity:1; transform:translateY(0);}
+  60%{opacity:0; transform:translateY(10px);}
+  61%{opacity:0; transform:translateY(0);}
+  100%{opacity:1; transform:translateY(0);}
+}
+@media (prefers-reduced-motion: reduce){
+  .hero-scroll-cue, .hero-scroll-cue-wheel, .hero-scroll-cue-mouse::before{animation:none;}
+}
+/* Visibility (show/hide) is now handled in JS via feature detection —
+   see showScrollCue in Hero.tsx — rather than brittle CSS height
+   breakpoints, which incorrectly hid the cue on many normal desktop
+   viewports. This file only handles sizing/positioning for when shown. */
