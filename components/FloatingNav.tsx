@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { SECTIONS } from '@/lib/content';
+import { scrollToSection } from '@/lib/utils';
 
 export default function FloatingNav() {
   const navRef = useRef<HTMLElement>(null);
@@ -40,6 +41,10 @@ export default function FloatingNav() {
           href={`#${s.id}`}
           aria-label={`Go to ${s.label}`}
           data-section={s.id}
+          onClick={(e) => {
+            e.preventDefault();
+            scrollToSection(s.id);
+          }}
         >
           <span className="floating-nav-label" aria-hidden="true">
             {s.label}

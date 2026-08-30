@@ -69,7 +69,27 @@
   font-family:var(--font-display); font-weight:700; font-size:clamp(1.2rem,2.4vw,1.5rem);
   color:var(--accent); line-height:1.4; margin-bottom:18px; max-width:none; width:100%;
 }
-.hero-bio{font-size:1rem; line-height:1.75; color:var(--text-secondary); margin-bottom:30px; max-width:none; width:100%;}
+/* Two small monospace "stat lines" under the name — role/experience and
+   the career arc — replacing the old prose bio with scannable facts,
+   styled like .section-eyebrow (same mono/uppercase/letter-spacing
+   treatment) for visual consistency with the rest of the site. */
+.hero-stat-lines{margin-bottom:14px; display:flex; flex-direction:column; gap:4px;}
+.hero-stat-line{
+  font-family:var(--font-mono); font-size:clamp(11px,1vw,13px); letter-spacing:.1em;
+  color:var(--text-secondary); text-transform:uppercase;
+}
+.hero-role-stat{color:var(--text-primary); font-weight:600;}
+.hero-tech-arc{
+  color:var(--text-secondary);
+  opacity:0; transform:translateY(4px);
+  animation:heroStatArcIn .6s ease forwards; animation-delay:.35s;
+}
+@keyframes heroStatArcIn{
+  to{opacity:1; transform:translateY(0);}
+}
+@media (prefers-reduced-motion: reduce){
+  .hero-tech-arc{animation:none; opacity:1; transform:none;}
+}
 
 .hero-actions{display:flex; flex-wrap:wrap; gap:14px; margin-bottom:24px;}
 .btn{
@@ -279,7 +299,7 @@
   .hero-content{width:100%;}
   .hero-content{top:0;}
   .hero-graph-panel{height:clamp(420px, 62vh, 640px); min-height:380px; margin-top:8px;}
-  .hero-bio, .hero-tagline{max-width:100%;}
+  .hero-tagline{max-width:100%;}
   .graph-hub{width:clamp(52px,11%,64px); aspect-ratio:1 / 1; height:auto;}
 }
 @media (max-width:480px){

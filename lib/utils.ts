@@ -2,6 +2,22 @@
    SHARED UTILITIES — no logic here is duplicated elsewhere.
    ========================================================== */
 
+/**
+ * Smooth-scrolls to a section by id, offsetting for the sticky top
+ * navbar's *live* rendered height (measured via getBoundingClientRect,
+ * not a hardcoded guess) so the section's title always lands cleanly
+ * below the nav — correct even if the nav's height changes (e.g.
+ * wrapped links on narrower screens, or if it's ever made to auto-hide).
+ */
+export function scrollToSection(sectionId: string): void {
+  const target = document.getElementById(sectionId);
+  if (!target) return;
+  const nav = document.querySelector('.topbar') as HTMLElement | null;
+  const navHeight = nav ? nav.getBoundingClientRect().height : 0;
+  const top = target.getBoundingClientRect().top + window.scrollY - navHeight;
+  window.scrollTo({ top, behavior: 'smooth' });
+}
+
 export function hexToRgba(hex: string, a: number): string {
   if (typeof hex !== 'string' || hex.startsWith('var(')) return hex;
   const v = hex.replace('#', '');

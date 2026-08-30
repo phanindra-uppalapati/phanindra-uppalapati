@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PROFILE } from '@/lib/content';
 import { useHourTint } from '@/lib/useHourTint';
+import { scrollToSection } from '@/lib/utils';
 import SkillConstellation from './SkillConstellation';
 
 function ResumeIcon() {
@@ -109,8 +110,11 @@ export default function Hero() {
               {firstName}
               <span className="hero-name-dot">.</span>
             </h1>
+            <div className="hero-stat-lines">
+              <p className="hero-stat-line hero-role-stat">{PROFILE.roleStat}</p>
+              <p className="hero-stat-line hero-tech-arc">{PROFILE.techArc}</p>
+            </div>
             <p className="hero-tagline">{PROFILE.tagline}</p>
-            <p className="hero-bio">{PROFILE.bio}</p>
             <div className="hero-actions">
               <a className="btn primary" href={PROFILE.ctas.primary.href}>
                 <ArrowIcon /> {PROFILE.ctas.primary.label}
@@ -140,14 +144,7 @@ export default function Hero() {
               type="button"
               className="hero-scroll-cue"
               aria-label="Scroll to Engineering Journey"
-              onClick={() => {
-                const target = document.getElementById('journey');
-                if (!target) return;
-                const nav = document.querySelector('.topbar') as HTMLElement | null;
-                const navHeight = nav ? nav.getBoundingClientRect().height : 0;
-                const top = target.getBoundingClientRect().top + window.scrollY - navHeight;
-                window.scrollTo({ top, behavior: 'smooth' });
-              }}
+              onClick={() => scrollToSection('journey')}
             >
               <span className="hero-scroll-cue-label">SCROLL TO EXPLORE</span>
               <span className="hero-scroll-cue-mouse">

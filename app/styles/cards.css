@@ -11,6 +11,21 @@
   transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;
 }
 .card:hover{transform:translateY(-4px); box-shadow:var(--shadow); border-color:var(--border-strong);}
+/* Project/article cards get a stronger, accent-tinted glow on hover —
+   echoing the scroll cue's treatment for a more premium feel — layered
+   on top of (not replacing) the generic .card:hover lift above. */
+.wi-inner:hover,
+.wi-inner:focus-within{
+  transform:translateY(-6px);
+  border-color:color-mix(in srgb, var(--accent) 35%, var(--border-strong));
+  box-shadow:
+    var(--shadow),
+    0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent),
+    0 14px 36px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+@media (prefers-reduced-motion: reduce){
+  .card:hover, .wi-inner:hover, .wi-inner:focus-within{transform:none;}
+}
 
 .skills-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px;}
 .skill-card{padding:20px 22px;}
@@ -36,8 +51,23 @@
    bottom of this section.
    ========================================================== */
 .carousel{position:relative;}
-.carousel-meta{display:flex; justify-content:center; margin-bottom:16px;}
-.carousel-counter{font-family:var(--font-mono); font-size:12px; letter-spacing:.08em; color:var(--text-muted);}
+/* Header row: title on the left, counter pinned top-right — replaces the
+   old centered counter that floated awkwardly above the cards. Scoped to
+   .section-head-with-counter so it doesn't touch other sections' headers. */
+.section-head-with-counter{
+  display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap;
+}
+.carousel-counter{font-family:var(--font-mono); font-size:12px; letter-spacing:.08em; color:var(--text-muted); white-space:nowrap;}
+
+/* Projects-only spacing override (scoped via #projects so the shared
+   .section rule used by every other section is untouched). Tighter
+   top/bottom padding reclaims vertical space so the section fits closer
+   to one viewport height; container width stays the shared 1180px max
+   to keep this section visually consistent with the rest of the site —
+   extra width instead comes from showing less of the next card's peek
+   (see .wi-slide below) and trimming the card's own side padding. */
+#projects.section{padding-block:clamp(4vh,6vh,8vh);}
+#projects .section-head{margin-bottom:20px;}
 
 .carousel-viewport{position:relative;}
 .carousel-nav{
@@ -66,18 +96,21 @@
 .carousel-slide{scroll-snap-align:start; display:flex;}
 
 /* Compact card: skills-only content, no diagram — sized so two fit
-   per row with a peek of a third at the edge. */
-.wi-slide{flex:0 0 clamp(300px, 46%, 460px);}
+   per row with only a slim peek of a third at the edge (reduced from
+   46% to 50% basis to shrink that peek and give each visible card
+   more room, since the container width itself stays at the shared
+   1180px max for site-wide consistency). */
+.wi-slide{flex:0 0 clamp(300px, 50%, 540px);}
 /* Feature card: has a flow/pipeline diagram or image — needs the room. */
-.wi-slide.is-feature{flex:0 0 clamp(340px, 74%, 760px);}
+.wi-slide.is-feature{flex:0 0 clamp(340px, 80%, 860px);}
 
 .wi-inner{
-  width:100%; padding:clamp(20px,3vw,36px);
+  width:100%; padding:clamp(20px,3vw,36px) clamp(10px,1.6vw,18px);
   display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:6px;
   overflow-y:hidden;
-  height:clamp(460px, 60vh, 600px);
+  height:clamp(480px, 64vh, 640px);
 }
-.wi-slide.is-feature .wi-inner{height:clamp(520px, 66vh, 680px);}
+.wi-slide.is-feature .wi-inner{height:clamp(560px, 70vh, 720px);}
 /* Scrolling (and the scrollbar itself) only turns on once JS confirms a
    card's content actually exceeds its fixed desktop height — see
    WorkCard's overflow check. Most cards never get this class. */
@@ -256,7 +289,7 @@
   .wi-slide, .wi-slide.is-feature{flex-basis:auto;}
   .wi-inner, .wi-slide.is-feature .wi-inner{height:auto; overflow-y:visible;}
   .wi-inner.has-overflow{overflow-y:visible;}
-  .carousel-nav, .carousel-meta{display:none;}
+  .carousel-nav, .carousel-counter{display:none;}
 }
 @media (max-width:480px){
   .carousel-nav{width:34px; height:34px; font-size:16px;}
