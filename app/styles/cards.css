@@ -28,7 +28,32 @@
 }
 
 .skills-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px;}
-.skill-card{padding:20px 22px;}
+.skill-card{padding:20px 22px; position:relative; overflow:hidden;}
+/* Ambient glow: a static hue-tinted halo (base) plus a slow, independent
+   breathing pulse per card (::before layer) so cards don't all pulse in
+   sync — each gets a small negative animation-delay derived from its
+   grid position via nth-child, staggering the cycle. Kept as a separate
+   pseudo-element (rather than animating box-shadow directly) so only
+   opacity is animated — cheap, no layout/paint thrashing. */
+.skill-card{
+  box-shadow:var(--shadow-sm), 0 0 24px -6px color-mix(in srgb, var(--hue) 30%, transparent);
+}
+.skill-card::before{
+  content:''; position:absolute; inset:-30%; z-index:-1; pointer-events:none;
+  background:radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--hue) 22%, transparent), transparent 70%);
+  opacity:.55;
+  animation:skillCardBreathe 5.5s ease-in-out infinite;
+}
+.skill-card:nth-child(2n)::before{animation-delay:-1.8s;}
+.skill-card:nth-child(3n)::before{animation-delay:-3.4s;}
+.skill-card:nth-child(4n)::before{animation-delay:-.9s;}
+@keyframes skillCardBreathe{
+  0%, 100%{opacity:.4;}
+  50%{opacity:.85;}
+}
+@media (prefers-reduced-motion:reduce){
+  .skill-card::before{animation:none; opacity:.55;}
+}
 .generic-card-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px;}
 .generic-card{padding:22px; display:flex; flex-direction:column; gap:10px;}
 .generic-card h3{font-family:var(--font-display); font-size:1.05rem; font-weight:600;}
@@ -404,7 +429,7 @@
   font-size:clamp(1.05rem,2vw,1.3rem); line-height:1.55; color:var(--text-secondary);
   border-left:2px solid var(--accent); padding-left:20px; margin-bottom:20px; opacity:.95;
 }
-.note-body{font-size:1rem; line-height:1.85; color:var(--text-secondary); margin-bottom:14px; text-indent:2em;}
+.note-body{font-size:1rem; line-height:1.85; color:var(--text-secondary); margin-bottom:20px;}
 
 /* Tablet: a touch more breathing room than the mobile 660px cap */
 @media (min-width:768px){
@@ -426,6 +451,17 @@
   .note-card{max-width:920px;}
 }
 .note-divider{width:60px; height:1px; border-top:1px dashed var(--border-strong); margin:20px 0 14px;}
+
+/* Sign-off line under the signature animation — warm/personal tone per
+   design decision, styled a touch smaller and softer than note-body so
+   it reads as a quiet closing line, not another paragraph of the letter. */
+.note-signoff{
+  display:flex; align-items:center; flex-wrap:wrap; gap:8px;
+  margin-top:14px; font-size:.9rem; color:var(--text-secondary);
+}
+.note-signoff a{color:var(--accent); text-decoration:none; font-family:var(--font-mono); font-size:.87rem;}
+.note-signoff a:hover{text-decoration:underline;}
+.note-signoff-copy{width:22px; height:22px;}
 .note-signature-wrap{margin-bottom:0;}
 .note-signature-mask{display:inline-block;}
 .note-signature-svg{height:2.6rem; width:auto; display:block; overflow:visible;}

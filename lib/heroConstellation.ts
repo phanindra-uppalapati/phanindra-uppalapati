@@ -38,7 +38,7 @@ export const CONSTELLATION_DATA: ConstellationCluster[] = [
   { id: 'frontend', name: 'FRONTEND', hue: '#C4634F', skills: ['React', 'Next.js', 'JSP'] },
   { id: 'ai', name: 'AI', hue: '#A855F7', skills: ['Agentic Workflows', 'Multimodal Integration', 'Claude Code', 'Copilot'] },
   { id: 'cloud', name: 'CLOUD', hue: '#D0679A', skills: ['AWS', 'ROSA', 'PCF'] },
-  { id: 'data', name: 'DATA', hue: '#3E7CB1', skills: ['PostgreSQL', 'Db2', 'Redis'] },
+  { id: 'data', name: 'DATA', hue: '#3E7CB1', skills: ['PostgreSQL', 'Db2', 'Redis'], labelSide: 'bottom' },
   { id: 'platform', name: 'PLATFORM', hue: '#7C6FE0', skills: ['GitLab CI', 'GitOps', 'Kubernetes'] },
   { id: 'backend', name: 'BACKEND', hue: '#2FA89D', skills: ['Java', 'Spring Boot', 'RabbitMQ'] },
 ];

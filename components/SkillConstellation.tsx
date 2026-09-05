@@ -271,9 +271,14 @@ export default function SkillConstellation({
         const b = liveClusterCenters[edge.b];
         if (!a || !b) return;
         let ctrl = edge.control;
-        if (ctrl && edge.kind !== 'spoke') {
-          const driftAx = liveClusterCenters[edge.a].x - cur.clusterCenters[edge.a].x;
-          const driftAy = liveClusterCenters[edge.a].y - cur.clusterCenters[edge.a].y;
+        if (ctrl) {
+          // Now applies to spoke edges too (previously excluded, back
+          // when spokes were always straight with no control point to
+          // adjust) — keeps the new trunk-line fan curve visually
+          // attached to its cluster endpoint during idle drift/wobble,
+          // instead of the curve staying fixed while the endpoint moves.
+          const driftAx = edge.kind === 'spoke' ? 0 : liveClusterCenters[edge.a].x - cur.clusterCenters[edge.a].x;
+          const driftAy = edge.kind === 'spoke' ? 0 : liveClusterCenters[edge.a].y - cur.clusterCenters[edge.a].y;
           const driftBx = liveClusterCenters[edge.b].x - cur.clusterCenters[edge.b].x;
           const driftBy = liveClusterCenters[edge.b].y - cur.clusterCenters[edge.b].y;
           ctrl = { x: ctrl.x + (driftAx + driftBx) / 2, y: ctrl.y + (driftAy + driftBy) / 2 };

@@ -149,16 +149,33 @@ export function clusterBasePositions(
   const cx = W / 2;
   const cy = H / 2;
   const count = CONSTELLATION_DATA.length;
-  const radiusX = W * (isMobile ? 0.36 : 0.47);
-  const radiusY = H * (isMobile ? 0.34 : 0.45);
+  // Single uniform radius (not separate W-based/H-based values) so the
+  // 7 clusters sit on a true circle rather than an ellipse — the panel
+  // itself stays a rectangle, but the cluster arrangement inside it is
+  // now geometrically circular, with exact 360/7 angular spacing (see
+  // the `angle` calc below, unchanged). Slightly increased from the
+  // previous 0.47/300 ceiling so clusters fill more of the available
+  // panel area (less dead space around the constellation) — still
+  // safely inside the marginX/marginY clamp below, which is the real
+  // final boundary (label space near the panel edge).
+  const orbit = Math.min(Math.min(W, H) * (isMobile ? 0.36 : 0.5), isMobile ? 140 : 320);
+  const radiusX = orbit;
+  const radiusY = orbit;
   const startAngle = -Math.PI / 2 - Math.PI / count;
 
-  const labelMargin = isMobile ? 34 : 108;
+  const labelMargin = isMobile ? 34 : 95;
   // marginR (the bigger, rendered halo) keeps the visible circle itself
   // from clipping the panel edge; spacingR (below) keeps the same
   // inter-cluster distances as before the halo grew.
   const marginX = clampNum(marginR + labelMargin, 0, W / 2 - 4);
-  const marginY = clampNum(marginR + (isMobile ? 16 : 34), 0, H / 2 - 4);
+  // Vertical clearance for top/bottom cluster labels — must exceed
+  // haloR + the label's own offset (`gap` in computeEdgeCurves/label
+  // placement below, currently 18px) plus a safety buffer, or the top
+  // row's cluster name (e.g. "FRONTEND") gets clipped by the panel's
+  // own top edge. This was previously 34, tuned for an older, smaller
+  // label gap (10px) — bumping the gap without correspondingly
+  // bumping this is exactly what caused that clipping bug.
+  const marginY = clampNum(marginR + (isMobile ? 16 : 45), 0, H / 2 - 4);
 
   const positions = CONSTELLATION_DATA.map((_, i) => {
     const angle = startAngle + (i / count) * Math.PI * 2;
@@ -204,7 +221,12 @@ export function buildNodes(clusterCenters: Point[], haloR: number, isMobile: boo
   const nodes: ConstellationNode[] = [];
   CONSTELLATION_DATA.forEach((cluster: ConstellationCluster, ci) => {
     const n = cluster.skills.length;
-    const spread = haloR * clampNum(0.42 + n * 0.035, 0.42, 0.68);
+    // Fixed spread regardless of cluster size (was scaling with skill
+    // count — 0.42 + n*0.035 — which made 3-skill clusters visibly
+    // tighter than 4-skill ones, reading as inconsistent/misaligned
+    // rather than a deliberate design choice). A single constant keeps
+    // every cluster's node spacing visually consistent.
+    const spread = haloR * 0.54;
     cluster.skills.forEach((label, i) => {
       const angle = (i / n) * Math.PI * 2 + ci * 1.3;
       nodes.push({
@@ -250,7 +272,8 @@ export function planLabels(
 
   function bestCandidate<M extends { dx: number; dy: number; align: Align }>(
     candidates: { rect: Rect; meta: M }[],
-    excludeHaloIndex: number
+    excludeHaloIndex: number,
+    biasFn?: (meta: M) => number
   ): M {
     let best = candidates[0];
     let bestScore = Infinity;
@@ -266,6 +289,7 @@ export function planLabels(
       const oob =
         Math.max(0, -rect.x) + Math.max(0, -rect.y) + Math.max(0, rect.x + rect.w - W) + Math.max(0, rect.y + rect.h - H);
       score += oob * 60;
+      if (biasFn) score += biasFn(candidate.meta);
       if (score < bestScore) {
         bestScore = score;
         best = candidate;
@@ -284,7 +308,11 @@ export function planLabels(
   const clusterLabels: ClusterLabelPlan[] = CONSTELLATION_DATA.map((cluster, ci) => {
     const { x: cx, y: cy } = clusterCenters[ci];
     const w = measureText(cluster.name, clusterFont);
-    const gap = 10;
+    // Increased from 10 — cluster labels (e.g. "MAINFRAME") were
+    // sitting close enough to trunk/edge lines passing near the
+    // cluster that they visually overlapped a line rather than
+    // reading as clearly separate.
+    const gap = 18;
     const sides: { dx: number; dy: number; align: Align; baseline: 'top' | 'bottom' | 'middle' }[] = cluster.labelSide
       ? [
           {
@@ -320,6 +348,17 @@ export function planLabels(
     const text = isMobile ? n.shortLabel : n.label;
     const w = measureText(text, nodeFont);
     const dist = n.radius + 7;
+    // Unit vector from cluster center toward this node — "outward".
+    // Candidates whose direction aligns with it score a bonus (favorable);
+    // candidates pointing back toward the center get penalized instead of
+    // scoring neutrally. Needed because the halo bounding-box overlap
+    // check alone can't tell inward from outward here: a node's small
+    // label offset (dist) rarely pushes the candidate rect outside the
+    // halo's own bounding square, so every direction previously looked
+    // equally "clear" to the collision scorer.
+    const outX = Math.cos(angle);
+    const outY = Math.sin(angle);
+    const OUTWARD_BONUS = 40;
     const candidates = [
       { dx: dist, dy: 0, align: 'left' as Align },
       { dx: -dist, dy: 0, align: 'right' as Align },
@@ -332,7 +371,17 @@ export function planLabels(
       const ry = ny + s.dy - nodeH / 2;
       return { rect: { x: rx, y: ry, w, h: nodeH }, meta: s };
     });
-    const chosen = bestCandidate(candidates, n.clusterIndex);
+    // Previously excluded the node's own cluster halo from the overlap
+    // score entirely (meant to avoid penalizing a label for sitting near
+    // its own node) — but that also meant inward-facing candidates were
+    // never penalized against the own halo either, letting labels drift
+    // toward the cluster interior. Now scored like any other halo, with
+    // the radial bias above supplying the outward preference.
+    const chosen = bestCandidate(candidates, -1, (meta) => {
+      const mag = Math.hypot(meta.dx, meta.dy) || 1;
+      const alignment = (meta.dx * outX + meta.dy * outY) / mag; // -1..1
+      return -alignment * OUTWARD_BONUS;
+    });
     n.labelDx = chosen.dx;
     n.labelDy = chosen.dy;
     n.labelAlign = chosen.align;
@@ -362,7 +411,25 @@ export function computeEdgeCurves(W: number, H: number, haloR: number, clusterCe
 
   edges.forEach((edge) => {
     if (edge.kind === 'spoke') {
-      edge.control = undefined;
+      // Trunk lines (hub-to-cluster) were always forced straight,
+      // meaning all 7 converge through the exact same center point —
+      // a visually "tangled knot" where many lines cross at once. A
+      // consistent perpendicular bow (same rotational direction for
+      // every spoke, pinwheel-style) fans them out instead, reducing
+      // the crossing density right at the hub without looking random.
+      const B = clusterCenters[edge.b];
+      if (!B) {
+        edge.control = undefined;
+        return;
+      }
+      const dx = B.x - cx;
+      const dy = B.y - cy;
+      const len = Math.hypot(dx, dy) || 1;
+      const perp = { x: -dy / len, y: dx / len };
+      const mx = (cx + B.x) / 2;
+      const my = (cy + B.y) / 2;
+      const bow = haloR * 0.32;
+      edge.control = { x: mx + perp.x * bow, y: my + perp.y * bow };
       return;
     }
     const A = clusterCenters[edge.a];
