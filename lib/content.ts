@@ -9,8 +9,9 @@ export type Profile = {
   initials: string;
   name: string;
   title: string;
+  roleStat: string;
+  techArc: string;
   tagline: string;
-  bio: string;
   avatar: string;
   resume: string;
   links: {
@@ -28,9 +29,10 @@ export const PROFILE: Profile = {
   initials: 'PU',
   name: 'Phanindra Uppalapati',
   title: 'Senior Software Engineer',
+  roleStat: 'SENIOR SOFTWARE ENGINEER · 13+ YEARS',
+  techArc: 'MAINFRAME → JAVA → CLOUD → AI',
   tagline:
-    'I modernize complex systems into resilient, cloud-native platforms — without losing what made them work.',
-  bio: "With 13+ years of experience spanning mainframe systems, cloud-native microservices, and AI-enabled applications, I care most about leaving every system clearer than I found it.",
+    'I modernize legacy systems into resilient, cloud-native platforms, always leaving them clearer than I found them.',
   avatar: '/profile.jpg',
   resume: '/resume.pdf',
   links: {

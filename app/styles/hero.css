@@ -3,7 +3,21 @@
    single column on narrow ones with the constellation flowing
    below the bio text (never overlapping it — see hero-grid).
    ========================================================== */
-.hero{position:relative; padding-block:2vh 8vh; overflow:hidden;}
+.hero{
+  position:relative; padding-block:3vh 5vh; overflow:hidden;
+  /* Deliberately NOT forcing a min-height to fill the viewport.
+     Tried that (min-height:calc(100vh - nav height)) — it did make
+     hero fill exactly one screen, but combined with top-anchored
+     text (kept for consistent position across screen heights — see
+     hero-text-col below) it just left dead, unused space below the
+     content on taller monitors. That combo is weaker than either
+     real-world pattern: true centering (fills the space with
+     purpose, but text position would vary with the graph panel's
+     height again) or natural height (what this is now — hero is
+     exactly as tall as its content needs, and a sliver of the next
+     section peeking in on tall screens is a normal, common pattern
+     on real portfolio sites, not a flaw to engineer away). */
+}
 
 /* Light theme only: large, heavily diffused lavender/ice-blue mesh —
    the strongest instance of the ambient tint on the page (dialed down
@@ -29,32 +43,69 @@
 
 .hero-grid{
   position:relative; z-index:1; display:grid;
-  /* min(48vw, 920px): identical to before at laptop/external-monitor
-     widths (48vw stays under 920px until ~1917px viewport), but stops
-     the text column from ballooning past hero-content's own 880px max
-     on larger displays — that runaway growth was what left a dead gap
-     between the bio text and the graph on big monitors. 920px (not
-     880px) keeps a few px of natural buffer so content never touches
-     the column edge. */
-  grid-template-columns:minmax(560px, min(48vw, 920px)) minmax(0, 1fr);
-  gap:0; align-items:center;
-  width:100%; max-width:none; margin:0; padding-inline:calc(clamp(20px,5vw,64px) + 4px);
+  /* Whole hero block (text + graph together) is now a single fixed-
+     max-width, centered unit — same pattern as every other section's
+     .section (capped at 1180px). Hero gets a slightly larger cap
+     (1300px) since it hosts a richer visual than plain text sections.
+     Both columns share the same 600px max — text was widened from an
+     earlier 560px cap, using space freed by shrinking the gap toward
+     zero, so the two feel connected/blended rather than separated by
+     visible dead space. Any extra viewport width becomes even outer
+     margin around the WHOLE hero, rather than uneven whitespace
+     between the text and the graph (which is what happened with the
+     old fluid 1fr graph column). Below the cap, both columns shrink
+     fluidly via clamp() down to a 320px floor. */
+  /* Whole hero block (text + graph together) is now capped at the
+     SAME 1180px max-width used by every other section (.section,
+     see layout.css) — and the SAME padding-inline formula — so hero's
+     text starts at the exact same left edge as Journey/Awards/Skills/
+     Projects at every viewport width, not just below ~1180px. This
+     reopens an earlier deliberate exception (hero previously got a
+     wider 1370px cap specifically so the constellation had more
+     room) in favor of full site-wide alignment consistency. Columns
+     rebalanced to fit the smaller budget, same proportion as before. */
+  /* Whole hero block (text + graph together) is now capped at the
+     SAME 1180px max-width used by every other section (.section,
+     see layout.css) — and the SAME padding-inline formula — so hero's
+     text starts at the exact same left edge as Journey/Awards/Skills/
+     Projects at every viewport width, not just below ~1180px. This
+     reopens an earlier deliberate exception (hero previously got a
+     wider 1370px cap specifically so the constellation had more
+     room) in favor of full site-wide alignment consistency.
+     Columns: text now gets MORE width than the graph (560/480, was
+     500/545) — the graph was consistently 45-51px wider than text at
+     common desktop sizes, which was pushing the tagline to wrap more
+     lines than necessary ("compacted" text next to a comparatively
+     spacious graph). This is a real trade-off, not a free padding
+     cleanup: the graph panel's rendered size IS its column's size
+     (synced deliberately in an earlier fix, zero slack at most
+     viewports), so less column means a visibly smaller constellation
+     (~65px/~12% smaller) in exchange for text that wraps less. */
+  grid-template-columns: clamp(300px, 40vw, 560px) clamp(300px, 35vw, 480px);
+  gap:clamp(0px,0.3vw,6px); align-items:start;
+  width:100%; max-width:1180px; margin-inline:auto; padding-inline:clamp(20px,5vw,64px);
 }
 
-/* Wrapper for the text column. This — not .hero-content — is the grid
-   item now: it's explicitly placed at (row 1, col 1) and stretched to
-   the full row height (align-self:stretch overrides the grid's own
-   align-items:center), giving the scroll cue a full-height, positioned
-   parent to sit at the bottom of, without affecting hero-content's own
-   vertical centering (recreated here via flex) or hero-graph-panel's
-   placement (left on plain auto-placement, so it still auto-flows to
-   column 2 on desktop and stacks below on mobile exactly as before). */
+/* Wrapper for the text column, explicitly placed at (row 1, col 1).
+   align-self:stretch is no longer load-bearing for the scroll cue
+   (which now lives in its own grid row — see .hero-scroll-cue below)
+   but is kept as it doesn't affect hero-content's own vertical
+   centering (recreated here via flex). */
 .hero-text-col{
   grid-column:1; grid-row:1; align-self:stretch; min-width:0;
-  position:relative; display:flex; flex-direction:column; justify-content:center;
+  position:relative; display:flex; flex-direction:column; justify-content:flex-start;
 }
 
-.hero-content{min-width:0; width:clamp(560px,50vw,880px); position:relative; z-index:3; top:clamp(-54px,-6vh,-24px);}
+.hero-content{
+  min-width:0; width:100%; position:relative; z-index:3;
+  /* Fixed vertical anchor — was center-relative-to-graph (a small
+     negative top nudge off a centered position), which meant the
+     text's vertical position shifted with the graph panel's height
+     (533px-680px depending on viewport). A consistent top padding
+     means hero text always starts the same distance below the nav,
+     regardless of what size the graph happens to render at. */
+  padding-top:clamp(20px,3vh,40px);
+}
 
 .hero-eyebrow{
   font-family:var(--font-hand); font-weight:600; font-size:clamp(1.35rem,2.6vw,1.7rem);
@@ -69,7 +120,27 @@
   font-family:var(--font-display); font-weight:700; font-size:clamp(1.2rem,2.4vw,1.5rem);
   color:var(--accent); line-height:1.4; margin-bottom:18px; max-width:none; width:100%;
 }
-.hero-bio{font-size:1rem; line-height:1.75; color:var(--text-secondary); margin-bottom:30px; max-width:none; width:100%;}
+/* Two small monospace "stat lines" under the name — role/experience and
+   the career arc — replacing the old prose bio with scannable facts,
+   styled like .section-eyebrow (same mono/uppercase/letter-spacing
+   treatment) for visual consistency with the rest of the site. */
+.hero-stat-lines{margin-bottom:14px; display:flex; flex-direction:column; gap:4px;}
+.hero-stat-line{
+  font-family:var(--font-mono); font-size:clamp(11px,1vw,13px); letter-spacing:.1em;
+  color:var(--text-secondary); text-transform:uppercase;
+}
+.hero-role-stat{color:var(--text-primary); font-weight:600;}
+.hero-tech-arc{
+  color:var(--text-secondary);
+  opacity:0; transform:translateY(4px);
+  animation:heroStatArcIn .6s ease forwards; animation-delay:.35s;
+}
+@keyframes heroStatArcIn{
+  to{opacity:1; transform:translateY(0);}
+}
+@media (prefers-reduced-motion: reduce){
+  .hero-tech-arc{animation:none; opacity:1; transform:none;}
+}
 
 .hero-actions{display:flex; flex-wrap:wrap; gap:14px; margin-bottom:24px;}
 .btn{
@@ -94,42 +165,139 @@
 }
 .hero-links a:hover{color:var(--accent);}
 
+/* Email + copy as one visual pill: previously two separate elements
+   with the row's default column-gap between them, which read as two
+   unrelated controls. Wrapping in a bordered pill and pulling the copy
+   button in tight makes the pairing obvious at a glance while keeping
+   them as two distinct click targets underneath (see CopyEmailButton.tsx
+   for why they're not merged into one). */
+.hero-email-pill{
+  display:inline-flex; align-items:center; gap:8px;
+  border:1px solid var(--border); border-radius:20px;
+  padding:4px 6px 4px 12px;
+}
+/* Thin low-contrast divider between the email link and the copy button
+   — signals "two separate controls" (split-button pattern) without the
+   visual weight of a literal pipe character, which read as too bulky
+   next to the mono-font style used throughout this row. */
+.hero-email-pill::after{
+  content:''; width:1px; align-self:stretch; margin-block:5px;
+  background:var(--border); order:1;
+}
+.hero-email-pill a{padding:0; gap:7px; order:0;}
+.copy-email-btn{order:2;}
+.hero-email-pill:hover{border-color:var(--accent);}
+
+/* Copy-email button: deliberately a separate control from the mailto
+   link (see CopyEmailButton.tsx) rather than one link doing double duty.
+   Sized to sit inline in the same mono-font row without competing with
+   the "Email" text link right before it. */
+.copy-email-btn{
+  position:relative; display:inline-flex; align-items:center; justify-content:center;
+  width:24px; height:24px; padding:0; border-radius:50%;
+  background:none; border:none; color:var(--text-secondary);
+  cursor:pointer; transition:color .18s ease, background .18s ease;
+}
+.copy-email-btn:hover{color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, transparent);}
+.copy-email-btn.is-copied{color:#2fa86b;}
+.copy-email-tooltip{
+  position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%) translateY(2px);
+  font-family:var(--font-mono); font-size:11px; white-space:nowrap;
+  background:var(--surface-strong, var(--surface)); color:var(--text-primary);
+  border:1px solid var(--border); padding:4px 8px; border-radius:6px;
+  opacity:0; pointer-events:none; transition:opacity .16s ease, transform .16s ease;
+}
+.copy-email-btn:hover .copy-email-tooltip,
+.copy-email-btn:focus-visible .copy-email-tooltip,
+.copy-email-btn.is-copied .copy-email-tooltip{
+  opacity:1; transform:translateX(-50%) translateY(0);
+}
+
 /* ---- Constellation panel ----
    No aspect-ratio lock and a viewport-scaled height (not a small flat
    max-height) so the graph can stay tall and immersive at its own
-   pace — see hero-grid above for the column split that gives this
-   panel roughly half the hero's width, next to the text column. */
+   pace — see hero-grid above for the fixed-max-width column that
+   gives this panel its own dedicated space next to the text column. */
+/* Hard ceiling on how large the constellation panel itself can ever
+   render, independent of how wide its grid column happens to be. Without
+   this, an ultra-wide monitor (or a browser zoomed below 100%, which
+   reports a larger CSS-pixel viewport) let the panel balloon past any
+   comfortable size — clusters spread far apart from each other while
+   each cluster's own nodes stayed small, reading as sparse and
+   unpolished. Now that hero-grid itself is a fixed-max-width, centered
+   unit (see above), this cap is simply reached and held there — no
+   separate hug/centering hack needed here, since the column it lives
+   in is already exactly sized for it. */
 .hero-graph-panel{
   position:relative;
-  z-index:1; width:100%; min-height:420px; height:clamp(500px, 82vh, 980px);
-  /* Soft one-sided fade on the leading (left) edge only — lets the
-     graph visually "flow toward" the text column instead of stopping
-     at a hard rectangular boundary, without any element actually
-     rendering behind the text itself. Sits within the panel's own
-     existing halo margin (clusters are already inset further than
-     this), so no cluster or label ever gets clipped by it. Desktop
-     only — see the min-width:900px block below; on the stacked mobile
-     layout the graph is full-width beneath the text, where a left
-     fade wouldn't mean anything and would just look like a clipped edge. */
+  z-index:1; max-width:480px; min-width:0;
+  /* Centered within its own grid column (not left-aligned, the
+     previous default) — this matters now that width can be smaller
+     than the column's full allocation (via the min() below, height-
+     driven shrinking on shorter viewports): without this, all the
+     leftover space collapsed onto the right side only, a real bug
+     caught via pixel measurement (up to ~100px of unused space on
+     the right at some laptop sizes) rather than splitting evenly. */
+  margin-inline:auto;
+  /* Height-awareness folded directly into width (not a separate
+     max-height) — this is the fix for a real bug caught during
+     testing: a plain div with aspect-ratio:1/1 does NOT reciprocally
+     adjust width when height gets independently clamped by
+     max-height, so width and height diverged on shorter viewports,
+     stretching the circular cluster layout into a visual ellipse
+     (exactly the bug this whole aspect-ratio approach was built to
+     prevent). Using min() to fold the vh constraint into width itself
+     means aspect-ratio derives an equal height from that SAME
+     already-height-aware value — square is guaranteed on every axis,
+     always. 74vh leaves room for the nav bar, hero's own padding, and
+     the scroll cue below, so the whole hero fits one viewport without
+     needing max-height at all. Max lowered 680→640→545→480 across
+     rounds: first to track typical rendered size more closely, then
+     to fit hero's site-wide-consistent 1180px cap, then again to
+     deliberately give text more width than the graph. */
+  width:min(100%, 480px, 74vh);
+  /* Forces the panel to always be a literal square. This matters
+     because the constellation's cluster math (skillConstellationEngine.ts)
+     uses one uniform radius for a true circle in SVG coordinate space —
+     but that circle only *renders* as a circle if the box displaying it
+     is actually square. The previous height:clamp(500px, 82vh, 600px)
+     was independent of width, so on real browser viewports (where
+     chrome/toolbars eat vertical space unpredictably) width and height
+     frequently diverged, stretching the circular layout into a visual
+     ellipse — worse at "normal" laptop/monitor heights than at
+     coincidentally-square resized windows. aspect-ratio guarantees
+     height always equals width, so this can't happen regardless of
+     viewport height. (Mobile keeps its own explicit height override
+     below — a wide-not-square panel is intentional there, stacked
+     beneath the text rather than beside it.) */
+  aspect-ratio:1/1;
+}
+/* A genuine visible circular presence behind the constellation — a
+   mask alone can't make the panel "read as circular" if there's
+   nothing there to reveal a shape; this soft radial glow gives the
+   whole thing an actual circular silhouette to sit inside, rather
+   than floating in an implicit empty rectangle. Very low opacity —
+   ambient backdrop, not a competing visual element. Masked by the
+   same left-biased gradient as the SVG above (via the parent's own
+   mask-image), so it fades into the text edge in sync with the nodes. */
+.hero-graph-panel::before{
+  content:''; position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 62%);
 }
 @media (min-width:900px){
   .hero-graph-panel{
-    /* Keep the hero text column untouched. Give the graph its own extra
-       horizontal canvas on the right so the canvas itself receives a
-       larger width (rather than merely scaling the finished panel). */
-    width:calc(100% + clamp(96px, 10vw, 168px));
-    /* Pulled in further than before (was -44/-76px) for a near-zero
-       visual gap against the now width-capped text column. */
-    margin-left:clamp(-100px, -6vw, -60px);
-    margin-right:0;
-    transform:none;
-    transform-origin:center center;
-    /* Soft fade on the leading (left) edge only, so the panel's
-       rectangular boundary doesn't read as a hard line where it meets
-       the text. Kept narrow (6%) — cluster halos sit well inside this
-       per the layout's own margin math, so nothing gets clipped. */
-    mask-image:linear-gradient(to right, transparent 0%, black 6%);
-    -webkit-mask-image:linear-gradient(to right, transparent 0%, black 6%);
+    /* Single offset radial mask does two jobs at once, with no
+       cross-browser mask-composite risk: centered slightly toward the
+       text side (44% instead of 50%), it fades the panel's left edge
+       into the text column for a blended, ambient feel (never
+       reaching actual text pixels — the fade completes well before
+       the panel's own edge), while also softening the top/right/
+       bottom corners. Fade doesn't start until 68% of the panel's
+       half-size, comfortably outside the cluster ring's own orbit
+       (~48%, see skillConstellationEngine.ts's labelMargin), so no
+       cluster or label ever gets clipped by it. */
+    mask-image:radial-gradient(ellipse 78% 74% at 44% 50%, black 68%, black 78%, transparent 96%);
+    -webkit-mask-image:radial-gradient(ellipse 78% 74% at 44% 50%, black 68%, black 78%, transparent 96%);
   }
 }
 .constellation-svg{position:absolute; inset:0; width:100%; height:100%; z-index:0; display:block; overflow:visible;}
@@ -276,10 +444,9 @@
 @media (max-width:900px){
   .hero{padding-block:3vh 7vh;}
   .hero-grid{grid-template-columns:1fr;}
-  .hero-content{width:100%;}
-  .hero-content{top:0;}
+  .hero-content{width:100%; padding-top:0;}
   .hero-graph-panel{height:clamp(420px, 62vh, 640px); min-height:380px; margin-top:8px;}
-  .hero-bio, .hero-tagline{max-width:100%;}
+  .hero-tagline{max-width:100%;}
   .graph-hub{width:clamp(52px,11%,64px); aspect-ratio:1 / 1; height:auto;}
 }
 @media (max-width:480px){
@@ -287,20 +454,28 @@
 }
 
 /* Scroll cue
-   Placed as a third grid item inside .hero-grid (column 1 = text column)
-   so it centers under the hero TEXT only, not the constellation, and
-   aligns to the bottom of the grid row automatically — no JS math. */
+   Now a THIRD grid item spanning both columns as its own row (grid-row:2),
+   centered via justify-self — so it sits under the whole hero block
+   (text + constellation together), not just the text column. This
+   reads as "center of hero" rather than "center of text," per design
+   feedback. Explicit grid placement means it's unaffected by the two
+   columns' own auto-flow (hero-text-col stays col1/row1, hero-graph-
+   panel auto-flows to col2/row1). */
 .hero-scroll-cue{
-  position:absolute; left:50%; bottom:clamp(6px,2vh,20px); transform:translateX(-50%);
+  grid-column:1 / -1; grid-row:2; justify-self:center;
+  /* padding-top is the spacing floor from the row above (was
+     margin-top:auto when nested in the text column's flex stretch;
+     that trick no longer applies now the cue is its own grid row). */
+  padding-top:clamp(12px,2vh,24px); margin-bottom:clamp(4px,1vh,12px);
   display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1vh,8px);
-  background:none; border:none; cursor:pointer; padding:8px; z-index:3;
+  background:none; border:none; cursor:pointer; padding-inline:8px; z-index:3;
   color:var(--text-secondary); opacity:.85;
   transition:opacity .2s ease, transform .2s ease, color .2s ease;
   animation:heroScrollFloat 2.6s ease-in-out infinite;
 }
 .hero-scroll-cue:hover,
 .hero-scroll-cue:focus-visible{
-  opacity:1; color:var(--accent); transform:translateX(-50%) translateY(-2px);
+  opacity:1; color:var(--accent); transform:translateY(-2px);
 }
 .hero-scroll-cue:focus-visible{outline:2px solid var(--accent); outline-offset:4px; border-radius:8px;}
 .hero-scroll-cue-label{
@@ -342,8 +517,8 @@
   animation:heroScrollWheel 1.8s ease-in-out infinite;
 }
 @keyframes heroScrollFloat{
-  0%,100%{transform:translateX(-50%) translateY(0);}
-  50%{transform:translateX(-50%) translateY(5px);}
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(5px);}
 }
 @keyframes heroScrollGlow{
   0%,100%{opacity:.55; filter:blur(6px);}

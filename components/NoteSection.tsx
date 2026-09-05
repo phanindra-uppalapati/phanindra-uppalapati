@@ -1,7 +1,9 @@
-import { NOTE, SectionConfig } from '@/lib/content';
+import { NOTE, PROFILE, SectionConfig } from '@/lib/content';
 import SignatureAnimation from './SignatureAnimation';
+import CopyEmailButton from './CopyEmailButton';
 
 export default function NoteSection({ cfg }: { cfg: SectionConfig }) {
+  const email = PROFILE.links.email.replace('mailto:', '');
   return (
     <section id={cfg.id} className="section note-section" aria-labelledby={`${cfg.id}Title`}>
       <div className="card note-card reveal">
@@ -16,6 +18,16 @@ export default function NoteSection({ cfg }: { cfg: SectionConfig }) {
         ))}
         <div className="note-divider" />
         <SignatureAnimation />
+        {/* Sign-off contact line: reads as part of the letter itself
+            (how a real letter ends — signature, then how to reach the
+            sender) rather than a bolted-on CTA banner. Same mailto +
+            copy pattern as the hero, for anyone who reaches the end of
+            the letter and is convinced without scrolling back up. */}
+        <p className="note-signoff">
+          Reach me anytime at{' '}
+          <a href={PROFILE.links.email}>{email}</a>
+          <CopyEmailButton email={email} className="note-signoff-copy" />
+        </p>
       </div>
     </section>
   );

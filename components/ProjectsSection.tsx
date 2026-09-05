@@ -299,11 +299,16 @@ export default function ProjectsSection({ cfg }: { cfg: SectionConfig }) {
 
   return (
     <section id={cfg.id} className="section" aria-labelledby={`${cfg.id}Title`}>
-      <div className="section-head reveal">
-        <p className="section-eyebrow">{cfg.eyebrow}</p>
-        <h2 className="section-title" id={`${cfg.id}Title`}>
-          {cfg.title}
-        </h2>
+      <div className="section-head section-head-with-counter reveal">
+        <div>
+          <p className="section-eyebrow">{cfg.eyebrow}</p>
+          <h2 className="section-title" id={`${cfg.id}Title`}>
+            {cfg.title}
+          </h2>
+        </div>
+        <span className="carousel-counter">
+          {String(active + 1).padStart(2, '0')} / {String(slideCount).padStart(2, '0')}
+        </span>
       </div>
 
       <div
@@ -321,12 +326,6 @@ export default function ProjectsSection({ cfg }: { cfg: SectionConfig }) {
           }
         }}
       >
-        <div className="carousel-meta">
-          <span className="carousel-counter">
-            {String(active + 1).padStart(2, '0')} / {String(slideCount).padStart(2, '0')}
-          </span>
-        </div>
-
         <div className="carousel-viewport">
           <button
             className="carousel-nav prev"

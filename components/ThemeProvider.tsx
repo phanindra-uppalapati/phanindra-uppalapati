@@ -1,13 +1,15 @@
 'use client';
 
 /* ==========================================================
-   THEME — defaults to the visitor's local time of day (their
-   device clock — no geolocation needed), dark in the evening/
-   night and light during the day. A manual toggle always wins
-   after that and is remembered in localStorage.
-   The blocking script in app/layout.tsx <head> mirrors this
-   same time-based rule so there's no flash of the wrong theme
-   before this provider mounts.
+   THEME — defaults to dark for every first-time visitor
+   (previously time-based: light 7am-7pm, dark otherwise — moved
+   away from that so the site has one consistent, intentional
+   default look rather than changing based on when someone happens
+   to load it). A manual toggle always wins after that and is
+   remembered in localStorage.
+   The blocking script in app/layout.tsx <head> mirrors this same
+   default so there's no flash of the wrong theme before this
+   provider mounts.
    ========================================================== */
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
@@ -15,10 +17,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 type Theme = 'light' | 'dark';
 
 const STORAGE_KEY = 'site-theme';
-
-function timeBasedTheme(hour: number): Theme {
-  return hour >= 7 && hour < 19 ? 'light' : 'dark';
-}
+const DEFAULT_THEME: Theme = 'dark';
 
 function getPreferredTheme(): Theme {
   try {
@@ -27,7 +26,7 @@ function getPreferredTheme(): Theme {
   } catch {
     /* storage unavailable */
   }
-  return timeBasedTheme(new Date().getHours());
+  return DEFAULT_THEME;
 }
 
 type ThemeContextValue = {
@@ -85,9 +84,8 @@ export const THEME_BLOCKING_SCRIPT = `
 (function () {
   try {
     var stored = localStorage.getItem('${STORAGE_KEY}');
-    var hour = new Date().getHours();
-    var theme = (stored === 'light' || stored === 'dark') ? stored : ((hour >= 7 && hour < 19) ? 'light' : 'dark');
+    var theme = (stored === 'light' || stored === 'dark') ? stored : '${DEFAULT_THEME}';
     document.documentElement.dataset.theme = theme;
-  } catch (e) { document.documentElement.dataset.theme = 'dark'; }
+  } catch (e) { document.documentElement.dataset.theme = '${DEFAULT_THEME}'; }
 })();
 `;

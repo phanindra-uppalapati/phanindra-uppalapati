@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { PROFILE } from '@/lib/content';
 import { useHourTint } from '@/lib/useHourTint';
+import { scrollToSection } from '@/lib/utils';
 import SkillConstellation from './SkillConstellation';
+import CopyEmailButton from './CopyEmailButton';
 
 function ResumeIcon() {
   return (
@@ -72,25 +74,24 @@ export default function Hero() {
     return () => observer.disconnect();
   }, []);
 
-  // Scroll cue visibility: JS feature-detection instead of brittle CSS
-  // height breakpoints. Hidden on touch/coarse-pointer devices (where a
-  // "scroll" hint is unnecessary — swiping is the native affordance), and
-  // hidden whenever the page doesn't actually overflow the viewport (no
-  // point inviting a scroll that goes nowhere). Re-checked on resize since
-  // rotating a device or resizing a window can change both conditions.
+  // Scroll cue visibility: tied to the exact same 900px breakpoint that
+  // controls the hero layout itself (side-by-side above, stacked below
+  // — see .hero-grid in hero.css), so the cue only ever shows when text
+  // and constellation are actually side-by-side. This covers tablet
+  // landscape (still side-by-side, width >=900px) while hiding on phones
+  // and tablet portrait (stacked) — matching the layout, not device type.
+  // Still hidden when the page doesn't overflow the viewport (no point
+  // inviting a scroll that goes nowhere). Re-checked on resize.
   const [showScrollCue, setShowScrollCue] = useState(false);
   useEffect(() => {
-    const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
-    if (isCoarsePointer) {
-      setShowScrollCue(false);
-      return;
-    }
-    const checkOverflow = () => {
-      setShowScrollCue(document.documentElement.scrollHeight > window.innerHeight + 40);
+    const checkVisibility = () => {
+      const isSideBySide = window.matchMedia('(min-width: 900px)').matches;
+      const hasMoreToScroll = document.documentElement.scrollHeight > window.innerHeight + 40;
+      setShowScrollCue(isSideBySide && hasMoreToScroll);
     };
-    checkOverflow();
-    window.addEventListener('resize', checkOverflow);
-    return () => window.removeEventListener('resize', checkOverflow);
+    checkVisibility();
+    window.addEventListener('resize', checkVisibility);
+    return () => window.removeEventListener('resize', checkVisibility);
   }, []);
 
   return (
@@ -109,8 +110,10 @@ export default function Hero() {
               {firstName}
               <span className="hero-name-dot">.</span>
             </h1>
+            <div className="hero-stat-lines">
+              <p className="hero-stat-line hero-role-stat">{PROFILE.roleStat}</p>
+            </div>
             <p className="hero-tagline">{PROFILE.tagline}</p>
-            <p className="hero-bio">{PROFILE.bio}</p>
             <div className="hero-actions">
               <a className="btn primary" href={PROFILE.ctas.primary.href}>
                 <ArrowIcon /> {PROFILE.ctas.primary.label}
@@ -129,37 +132,33 @@ export default function Hero() {
               <a href={PROFILE.links.github} target="_blank" rel="noopener">
                 <CodeIcon /> GitHub
               </a>
-              <a href={PROFILE.links.email}>
-                <EnvelopeIcon /> Email
-              </a>
+              <span className="hero-email-pill">
+                <a href={PROFILE.links.email}>
+                  <EnvelopeIcon /> Email
+                </a>
+                <CopyEmailButton email={PROFILE.links.email.replace('mailto:', '')} />
+              </span>
             </div>
           </div>
-
-          {showScrollCue && (
-            <button
-              type="button"
-              className="hero-scroll-cue"
-              aria-label="Scroll to Engineering Journey"
-              onClick={() => {
-                const target = document.getElementById('journey');
-                if (!target) return;
-                const nav = document.querySelector('.topbar') as HTMLElement | null;
-                const navHeight = nav ? nav.getBoundingClientRect().height : 0;
-                const top = target.getBoundingClientRect().top + window.scrollY - navHeight;
-                window.scrollTo({ top, behavior: 'smooth' });
-              }}
-            >
-              <span className="hero-scroll-cue-label">SCROLL TO EXPLORE</span>
-              <span className="hero-scroll-cue-mouse">
-                <span className="hero-scroll-cue-wheel" />
-              </span>
-            </button>
-          )}
         </div>
 
         <div className="hero-graph-panel reveal" ref={graphPanelRef}>
           {graphStarted && <SkillConstellation panelRef={graphPanelRef} textRef={heroContentRef} hourWarmth={tint.warmth} />}
         </div>
+
+        {showScrollCue && (
+          <button
+            type="button"
+            className="hero-scroll-cue"
+            aria-label="Scroll to Engineering Journey"
+            onClick={() => scrollToSection('journey')}
+          >
+            <span className="hero-scroll-cue-label">SCROLL TO EXPLORE</span>
+            <span className="hero-scroll-cue-mouse">
+              <span className="hero-scroll-cue-wheel" />
+            </span>
+          </button>
+        )}
       </div>
     </section>
   );

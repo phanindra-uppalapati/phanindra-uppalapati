@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PROFILE, SECTIONS } from '@/lib/content';
 import { useTheme } from './ThemeProvider';
+import { scrollToSection } from '@/lib/utils';
 
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
@@ -96,7 +97,16 @@ export default function Header() {
   const navItems = (
     <>
       {navLinks.map((s) => (
-        <a key={s.id} href={`#${s.id}`} data-section={s.id} onClick={closeMenu}>
+        <a
+          key={s.id}
+          href={`#${s.id}`}
+          data-section={s.id}
+          onClick={(e) => {
+            e.preventDefault();
+            closeMenu();
+            scrollToSection(s.id);
+          }}
+        >
           {s.label}
         </a>
       ))}

@@ -76,3 +76,12 @@
   display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
   font-family:var(--font-mono); font-size:12px; color:var(--text-muted);
 }
+
+/* Journey / Awards / Skills — same tightened section padding as
+   Projects, for consistency; title-to-content gap is slightly larger
+   (28px vs Projects' 20px) since timeline/grid layouts read better with
+   a touch more separation than a carousel. Scoped by id so the shared
+   .section / .section-head rules (used by Hero and the Note section,
+   which are intentionally excluded) stay untouched. */
+#journey.section, #awards.section, #skills.section{padding-block:clamp(4vh,6vh,8vh);}
+#journey .section-head, #awards .section-head, #skills .section-head{margin-bottom:28px;}
